@@ -5,7 +5,8 @@ import matplotlib.pyplot as plt
 class MeanValueModel:
     def __init__(self):
         pass
-
+    
+    
     def initialize(self, T, dt):
         time = np.arange(0, T * dt, dt)
         alpha = {
@@ -48,8 +49,8 @@ class MeanValueModel:
         if dbs_active:
             I_dbs[int(len(time) / 3) : ] = I_dbs_amp
 
-        pulse_duration = int(T / 60)
-        pulse_period = int(T / 10)
+        pulse_duration = int(T / 30)
+        pulse_period = int(T / 9)
 
         w_ITC_to_CeA = np.zeros(len(time))
         w_ITC_to_CeA[0] = w['ITC_to_CeA']
@@ -125,12 +126,12 @@ class MeanValueModel:
 def main():
     T = 300
     dt = 0.1
-    ptsd_factor = 0
+    ptsd_factor = 1.0         # 0 = more severe, 1 = normal 
     I_fear = 1.0
     I_context_safe = 0.6
     I_context_threat = 0.6
     I_dbs_amp = 0.2
-    dbs_active = True
+    dbs_active = False
 
     model = MeanValueModel()
     time, alpha = model.initialize(T, dt)
