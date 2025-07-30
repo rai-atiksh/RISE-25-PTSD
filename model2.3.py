@@ -86,7 +86,7 @@ class MeanValueModel:
         return activity, context_trace, I_fear_trace, w_ITC_to_CeA
 
     def plot(self, time, activity, context_trace, I_fear_trace, w_ITC_to_CeA, ptsd_factor):
-        #NOTE: graphs with '#' after aren't necessary to plot
+        # Note: graphs with '#' after aren't necessary to plot
         fig = plt.figure(figsize=(14, 7))
         gs = gridspec.GridSpec(3, 1, height_ratios=[3, 1, 1])
 
