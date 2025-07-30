@@ -6,7 +6,7 @@ class MeanValueModel:
     def __init__(self):
         pass
     
-    
+
     def initialize(self, T, dt):
         time = np.arange(0, T * dt, dt)
         alpha = {
@@ -47,7 +47,7 @@ class MeanValueModel:
         I_fear_trace = np.zeros(len(time))
         I_dbs = np.zeros(len(time))
         if dbs_active:
-            I_dbs[int(len(time) / 3) : ] = I_dbs_amp
+            I_dbs[int(len(time) / 3) : ] = I_dbs_amp    # change the splicing indexes to add DBS at different points
 
         pulse_duration = int(T / 30)
         pulse_period = int(T / 9)
@@ -131,7 +131,7 @@ def main():
     I_context_safe = 0.6
     I_context_threat = 0.6
     I_dbs_amp = 0.2
-    dbs_active = False
+    dbs_active = False        # whether DBS is active or not in this simulation
 
     model = MeanValueModel()
     time, alpha = model.initialize(T, dt)
