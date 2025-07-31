@@ -1,0 +1,27 @@
+Platform: Ubuntu 20.04.2 LTS
+
+gcc (GCC): 9.3.0
+
+Python: 3.8.5
+
+Brian 2: 2.4.2
+
+Matplotlib: 3.3.4
+
+NumPy: 1.24.4
+
+SciPy: 1.6.1
+
+
+#############################
+### Packages installation ###
+#############################
+
+- Using an Anaconda Environment:
+
+$conda create -n amygdala python=3.8.5 anaconda
+$conda install --name amygdala -c conda-forge brian2 matplotlib==3.3.4 numpy==1.24.4 scipy==1.6.1
+
+- Using pip:
+
+$pip3 install --user brian2 matplotlib==3.3.4 numpy==1.24.4 scipy==1.6.1
