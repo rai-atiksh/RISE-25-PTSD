@@ -6,7 +6,7 @@ class MeanValueModel:
     def __init__(self):
         pass
     
-
+    # Initializes the decay value dictionary, the time vector and then returns them
     def initialize(self, T, dt):
         time = np.arange(0, T * dt, dt)
         alpha = {
@@ -20,6 +20,7 @@ class MeanValueModel:
         }
         return time, alpha
 
+    #Defines and initializes the activity arrays for the sub-regions and then returns it
     def init_activity(self, alpha, time):
         activity = {region: np.zeros(len(time)) for region in alpha}
         activity['BLA'][0] = 0.1
@@ -31,6 +32,8 @@ class MeanValueModel:
         activity['dHPC'][0] = 0.1
         return activity
 
+    # Returns the dictionaries containing the synaptic weighting
+    # The values were tweeked and experimented with to showcase the most biologically plausible results
     def init_weight(self):
         return {
             'vHPC_to_IL': 0.7,
@@ -42,55 +45,71 @@ class MeanValueModel:
             'BLA_to_CeA': 0.6
         }
 
-    def run_sim(self, T, dt, time, alpha, activity, w, ptsd_factor, I_fear, I_context_safe, I_context_threat, I_dbs_amp, dbs_active):
+    # Runs the simulation
+    def run_sim(self, T, dt, time, alpha, activity, w, ptsd_factor, I_fear, I_context_safe, I_context_threat, I_des_amp, des_active):
+        # Arrays to keep track of context, fear input, and des amplitutde over time
         context_trace = np.ones(len(time))
         I_fear_trace = np.zeros(len(time))
-        I_dbs = np.zeros(len(time))
-        if dbs_active:
-            I_dbs[int(len(time) / 3) : ] = I_dbs_amp    # change the splicing indexes to add DBS at different points
+        I_des = np.zeros(len(time))
+        # Initialize the DES array based on when you want it active
+        if des_active:
+            I_des[int(len(time) / 3) : ] = I_des_amp    # change the splicing indexes to add des at different points
 
+        # Initializing pulse parameters for fear input
         pulse_duration = int(T / 30)
         pulse_period = int(T / 9)
 
+        # Initializing synaptic weighting(and learning rate) of ITC to CeA to reflect Hebbian plasticity
         w_ITC_to_CeA = np.zeros(len(time))
         w_ITC_to_CeA[0] = w['ITC_to_CeA']
         learning_rate = 0.01
-
+        
+        #Making the middle third of context represent the 'safe' enviornment
         context_trace[int(len(time)/3) : int(2*len(time)/3)] = 0.0
         for t in range(0, len(time), pulse_period):
             I_fear_trace[t : t + pulse_duration] = I_fear
 
+        # The actual simulation
         for t in range(1, len(time)):
             I_vHPC = I_context_safe if context_trace[t] == 0.0 else 0
             I_dHPC = I_context_threat if context_trace[t] == 1.0 else 0
 
+            # Changing activitis of hippocampal areas based on context
             activity['vHPC'][t] = max(0, activity['vHPC'][t-1] + dt * (-alpha['vHPC'] * activity['vHPC'][t-1] + I_vHPC))
             activity['dHPC'][t] = max(0, activity['dHPC'][t-1] + dt * (-alpha['dHPC'] * activity['dHPC'][t-1] + I_dHPC))
 
-            activity['IL'][t] = max(0, activity['IL'][t-1] + dt * (-alpha['IL'] * activity['IL'][t-1] + w['vHPC_to_IL'] * activity['vHPC'][t] * ptsd_factor + I_dbs[t]))
+            # Changing cortical areas based on des and hippocampal activity
+            # IL activity is affected by ptsd here in our model
+            # Note: des input can be moved to different brain regions to simulate effect of moving des stimulation to different region
+            activity['IL'][t] = max(0, activity['IL'][t-1] + dt * (-alpha['IL'] * activity['IL'][t-1] + w['vHPC_to_IL'] * activity['vHPC'][t] * ptsd_factor + I_des[t]))
             activity['PL'][t] = max(0, activity['PL'][t-1] + dt * (-alpha['PL'] * activity['PL'][t-1] + w['dHPC_to_PL'] * activity['dHPC'][t]))
 
+            # Changing BLA activity based on vHPC and also PL activities
             activity['BLA'][t] = max(0, activity['BLA'][t-1] + dt * (-alpha['BLA'] * activity['BLA'][t-1] + 
                                         w['vHPC_to_BLA'] * activity['vHPC'][t] + 
                                         w['PL_to_BLA'] * activity['PL'][t] + I_fear_trace[t]))
-
+            # Changing ITC activity based on IL and ptsd severity
             activity['ITC'][t] = max(0, activity['ITC'][t-1] + dt * (-alpha['ITC'] * activity['ITC'][t-1] + 
-                                        w['IL_to_ITC'] * activity['IL'][t] * ptsd_factor + I_dbs[t]))
+                                        w['IL_to_ITC'] * activity['IL'][t] * ptsd_factor + I_des[t]))
 
+            # Amount of inhibition received by CeA from the ITC 
             inhibition = w_ITC_to_CeA[t-1] * activity['ITC'][t]
+            # Changing CeA activity based on inhibition value and BLA activity
             activity['CeA'][t] = max(0, activity['CeA'][t-1] + dt * (-alpha['CeA'] * activity['CeA'][t-1] + 
                                     w['BLA_to_CeA'] * activity['BLA'][t] - inhibition))
 
+            # Changing synaptic weight between ITC and CeA based on hebbian plasticity
             delta_w = learning_rate * activity['ITC'][t] * activity['CeA'][t]
             w_ITC_to_CeA[t] = w_ITC_to_CeA[t-1] + delta_w
 
         return activity, context_trace, I_fear_trace, w_ITC_to_CeA
 
+    # Plots the graphs of the subregion activities, the context, and the fear input over time
+    # Each 3rd of the graph represents fear aquisition, extinction, and renewal/association respectively
     def plot(self, time, activity, context_trace, I_fear_trace, w_ITC_to_CeA, ptsd_factor):
-        # Note: graphs with '#' after aren't necessary to plot
         fig = plt.figure(figsize=(14, 7))
         gs = gridspec.GridSpec(3, 1, height_ratios=[3, 1, 1])
-
+        # Note: graphs with '#' after aren't necessary to plot
         ax1 = fig.add_subplot(gs[0])
         ax1.plot(time, activity['CeA'], label='CeA (Fear Output)', linewidth=2)
         ax1.plot(time, activity['BLA'], label='BLA (Associative Input)', linestyle='--')
@@ -127,11 +146,11 @@ def main():
     T = 300
     dt = 0.1
     ptsd_factor = 1.0         # 0 = more severe, 1 = normal 
-    I_fear = 1.0
-    I_context_safe = 0.6
-    I_context_threat = 0.6
-    I_dbs_amp = 0.2
-    dbs_active = False        # whether DBS is active or not in this simulation
+    I_fear = 1.0              # Fear input
+    I_context_safe = 0.6      # Stimulating current used to represent perception of 'safe' envirornment
+    I_context_threat = 0.6    # Stimulating current used to represent perception of 'threatening' envirornment
+    I_des_amp = 0.2           # The amplitutde of the stimulating des current
+    des_active = False        # whether des is active or not in this simulation
 
     model = MeanValueModel()
     time, alpha = model.initialize(T, dt)
@@ -139,8 +158,8 @@ def main():
     w = model.init_weight()
 
     activity, context_trace, I_fear_trace, w_ITC_to_CeA = model.run_sim(T, dt, time, alpha, activity, w, ptsd_factor, I_fear,
-                                                                        I_context_safe, I_context_threat, I_dbs_amp, 
-                                                                        dbs_active)
+                                                                        I_context_safe, I_context_threat, I_des_amp, 
+                                                                        des_active)
 
     model.plot(time, activity, context_trace, I_fear_trace, w_ITC_to_CeA, ptsd_factor)
 
