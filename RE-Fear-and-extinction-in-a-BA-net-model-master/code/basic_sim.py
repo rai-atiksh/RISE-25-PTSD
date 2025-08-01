@@ -19,6 +19,9 @@
 # Definition of the protocols used to reproduce the results for the spiking
 # model.
 # ----------------------------------------------------------------------------
+# NOTE: Portions of the comments in this file were generated with ChatGPT.
+#       See https://chat.openai.com for details.
+# ----------------------------------------------------------------------------
 
 from params     import *
 from amygdala   import *
@@ -35,46 +38,48 @@ protocol = int(sys.argv[1])
 seed(100) # seed of the random number generator
 
 
-###############################################################################
-# Simulation protocols
-###############################################################################
-
-
-
-'''
-
-protocol = 0:   simulation of spontaneous network activity (Figure 4)
-
-protocol = 1:   dynamics of conditioning and extinction processes (Figures 5 and 6)
-
-protocol = 3:   gamma oscillations for high network connectivity (Figure 9)
-
-protocol = 4:   effects of connectivity, synaptic weights and delays of the
-                inhibitory population on synchronization (Figures 10 and 11)
-                
-protocol = 5:   blockage of inhibition (Figure 12 and 13)
-
-
-'''
 def make_figure(renewal_fear_simulations, n_simulations, t1, t2):
+    """
+    Runs parallel simulations, loads the last sim's spike data, computes
+    time-binned firing rates for the final run, and then generates & saves:
+      - A raster plot of spikes
+      - Time-series of firing rates for A, B, and inhibitory populations
+      - Summary panels (mean ± SEM) of firing rates, CS weights, and CTX weights
+    Args:
+      renewal_fear_simulations : function to run one protocol repeat
+      n_simulations            : total repeats to average over
+      t1, t2                   : protocol phase boundary times (ms)
+    """
+    # Only execute when script is run directly (not when imported)
     if __name__ == '__main__':
-        processing_simulations = mp.Pool(3)
+        # --------------------------------------------------------------------
+        # 1) Launch parallel workers (use 6 cores on an M2 Air)
+        # --------------------------------------------------------------------
+        processing_simulations = mp.Pool(6)
+        # Map each simulation ID (0…n_simulations-1) to a worker
         results = processing_simulations.map(renewal_fear_simulations, range(n_simulations))
 
 
-        #loading the data from the last simulation
+        # --------------------------------------------------------------------
+        # 2) Load the **last** simulation’s raw spike data
+        # --------------------------------------------------------------------
         data = np.load('renewal_fear/last_simulation_data.npy', allow_pickle=True)
-        spk_ni = data.item().get('spk_ni_t')
-        spk_ne = data.item().get('spk_ne_t')
-        spk_A = data.item().get('spk_A')
-        spk_B = data.item().get('spk_B')
-        ID_ni = data.item().get('ID_ni')
-        ID_ne = data.item().get('ID_ne')
-        ID_A = data.item().get('ID_A')
-        ID_B = data.item().get('ID_B')
-        cs_intervals = data.item().get('cs_intervals')
+        # Extract arrays by key
+        spk_ni = data.item().get('spk_ni_t')    # inhibitory spike times (ms)
+        spk_ne = data.item().get('spk_ne_t')    # excitatory spike times (ms)
+        spk_A = data.item().get('spk_A')        # sub-pop A spike times
+        spk_B = data.item().get('spk_B')        # sub-pop B spike times
+        ID_ni = data.item().get('ID_ni')        # inhibitory neuron indices
+        ID_ne = data.item().get('ID_ne')        # excitatory neuron indices
+        ID_A = data.item().get('ID_A')          # sub-pop A neuron indices
+        ID_B = data.item().get('ID_B')          # sub-pop B neuron indices
+        cs_intervals = data.item().get('cs_intervals')  # list of (start,end) CS windows
 
-        bin_f = 15 #time bin to calculate the time series of the trigger rate of the last simulation.
+         # --------------------------------------------------------------------
+        # 3) Compute time‐binned firing rates for the **last** simulation
+        # --------------------------------------------------------------------
+        bin_f = 15 # time bin to calculate the time series of the trigger rate of the last simulation.
+        # Histogram counts in each bin for each population
         fr_IH_last = np.histogram(spk_ni, bins=np.arange(0, tsim, bin_f))
         fr_A_last = np.histogram(spk_A, bins=np.arange(0, tsim, bin_f))
         fr_B_last = np.histogram(spk_B, bins=np.arange(0, tsim, bin_f))
@@ -84,7 +89,9 @@ def make_figure(renewal_fear_simulations, n_simulations, t1, t2):
         # Final results
         ###########################################################################
 
-        # Raster plot for the last simulation
+        # --------------------------------------------------------------------
+        # 4) Raster & rate‐time‐series plot for the **last** run
+        # --------------------------------------------------------------------
         fig = plt.figure(constrained_layout=False, figsize=(15,10))
         gs = fig.add_gridspec(13,1)
 
@@ -98,9 +105,11 @@ def make_figure(renewal_fear_simulations, n_simulations, t1, t2):
             ax.plot([i,j],[-100,-100],'k-', lw = 3)
         # plt.plot(tstim[nonzero_id],-100.0*np.ones(size(nonzero_id)),'.k')
 
+        # annotate protocol phases
         ax.text(350, -350, 'CONDITIONING')
         ax.text(1650, -350, 'EXTINCTION')
         ax.text(2430, -350, 'RENEWAL')
+        # phase‐boundary lines
         ax.axvline(t1, ls='--', lw=2, color='black')
         ax.axvline(t2+tCTXB_dur, ls='--', lw=2, color='black')
         ax.set_ylim(-400,NE+NI)
@@ -110,7 +119,8 @@ def make_figure(renewal_fear_simulations, n_simulations, t1, t2):
         ax.text(-200, 3800,"A", weight="bold", fontsize=30)
 
         ax.get_xaxis().set_visible(False)
-
+        
+        # 4b) Firing‐rate time‐series for sub-pops A & B (rows 7–9)
         ax = fig.add_subplot(gs[7:10, 0])
 
         ax.plot(fr_B_last[1][:-1], matlab_smooth(fr_B_last[0]*1000/(bin_f*NI), 5), lw=2)
@@ -121,6 +131,7 @@ def make_figure(renewal_fear_simulations, n_simulations, t1, t2):
         #ax.plot(fr_IH[1][:-1], fr_IH[0]*1000/(bin_f*NI), 'r-')
         #plt.plot(fr_EX[1][:-1], fr_EX[0]*1000/(bin_f*NI), 'b-')
 
+        # overlay CS bars & phase lines
         for i,j in cs_intervals:
             ax.plot([i,j],[-0.5,-0.5],'k-', lw = 3)
         ax.axvline(t1, ls='--', lw=2, color='black')
@@ -134,6 +145,7 @@ def make_figure(renewal_fear_simulations, n_simulations, t1, t2):
         ax.text(-200, 3.8,"B", weight="bold", fontsize=30)
         ax.get_xaxis().set_visible(False)
 
+        # 4c) Firing‐rate time‐series for inhibitory pop (rows 10–12)
         ax = fig.add_subplot(gs[10:, 0])
         #ax.plot(fr_BB[1][:-1], fr_BB[0]*1000/(bin_f*NI),lw=2)
         #ax.plot(fr_AA[1][:-1], fr_AA[0]*1000/(bin_f*NI),lw=2)
@@ -141,6 +153,7 @@ def make_figure(renewal_fear_simulations, n_simulations, t1, t2):
         ax.plot(fr_IH_last[1][:-1], matlab_smooth(fr_IH_last[0]*1000/(bin_f*NI), 5), 'r-')
         #plt.plot(fr_EX[1][:-1], fr_EX[0]*1000/(bin_f*NI), 'b-')
 
+        # overlay CS bars & phase lines
         for i,j in cs_intervals:
             ax.plot([i,j],[-2,-2],'k-', lw = 3)
         ax.axvline(t1, ls='--', lw=2, color='black')
@@ -151,13 +164,15 @@ def make_figure(renewal_fear_simulations, n_simulations, t1, t2):
         ax.set_xlabel("Time (ms)")
         #ax.get_xaxis().set_visible(False)
         ax.text(-200, 17,"C", weight="bold", fontsize=30)
+
+        # save raster + time‐series figure
         plt.tight_layout()
         plt.savefig('renewal_fear/raster.png', dpi = 200)
 
 
-        ###########################################################################
-        # Average firing rate,CS and CTX for each subpopulation
-        ###########################################################################
+        # --------------------------------------------------------------------
+        # 5) Summary figure: mean ± SEM across all repeats
+        # --------------------------------------------------------------------
         n_CS = 12 #total CS presentation
 
         fig = plt.figure(constrained_layout=True, figsize=(7,10))
@@ -207,69 +222,103 @@ def make_figure(renewal_fear_simulations, n_simulations, t1, t2):
         ax.set_xlabel('CS presentations')
         ax.text(-2, 2.7,"C", weight="bold", fontsize=30)
         ax.set_ylim(0,3)
+        
+        # save summary figure
         plt.savefig('renewal_fear/avarages.png', dpi = 200)
         # plt.show()
 
 
-# protocol = 2:   fear renewal (Figures 7 and 8)
+# ----------------------------------------------------------------------------
+# Normal Fear Extinction (Protocol 1)
+# ----------------------------------------------------------------------------
 
-# Normal Fear Extinction
 if protocol == 1:
+    # Create output directory for this protocol
     os.system('mkdir renewal_fear')
 
-    # Makes array of on/off CS input
+    # Build a single array 'aux' that represents one CS on/off cycle:
+    #   - 1 for duration tCS_dur, then 0 for duration tCS_off
     aux	= np.zeros(int((tCS_dur+tCS_off)/delta_tr))
     aux[:int(tCS_dur/delta_tr)] = 1
+
+    # Concatenate the stimulus pattern:
+    #   1) initial no-stim period of length tinit
+    #   2) nCSA repetitions of aux (CS + CTX-A on/off)
+    #   3) no-stim gap (CTX off)
+    #   4) nCSB repetitions of aux (CS + CTX-B on/off)
+    #   5) another no-stim gap
+    #   6) one final aux cycle
     m_array = np.concatenate([np.zeros(int(tinit/delta_tr)),np.tile(aux, nCSA),\
                             np.zeros(int(tCTX_off/delta_tr)),np.tile(aux, nCSB),\
                             np.zeros(int(tCTX_off/delta_tr)),np.tile(aux, 1)])
-
+    
+    # Wrap the raw on/off array into Brian2 TimedArray objects:
+    #   - mt: unitless 0/1; stimulus: firing rate (scaled by fCS)
     mt       = TimedArray(m_array, dt=delta_tr*ms)
     stimulus = TimedArray(m_array*fCS*Hz, dt=delta_tr*ms)
 
-    t1 = tinit+tCTXA_dur
-    t2 = t1+tCTX_off
-    t3 = t2+tCTXB_dur+tCTX_off
+    # Compute key time‐points for the protocol
+    t1 = tinit+tCTXA_dur            # end of first CTX A period
+    t2 = t1+tCTX_off                # start of CTX B period
+    t3 = t2+tCTXB_dur+tCTX_off      # end of second CTX B
+
+
+    # Prepare a dict of input‐rate expressions for the amygdala network
     new_input_vars={
+                # CS neurons fire at 'stimulus' rate throughout
                 'cs_rate'  : 'stimulus(t)',
+                # CTX A active during initial CS A & final renewal window
                 'ctxA_rate': '((t>='+str(tinit)+'*ms)*(t<='+str(t1)+'*ms)+(t>='+str(t3)+'*ms))*'+str(fCTX)+'*Hz',
+                # CTX B active only in middle extinction window
                 'ctxB_rate': '((t>='+str(t2)+'*ms)*(t<='+str(t2+tCTXB_dur)+'*ms))*'+str(fCTX)+'*Hz'
                 }
     input_vars.update(new_input_vars)
-    tsim = t3 + tCS_dur + tCS_off
-    tstim= np.arange(0.0, tsim, delta_tr)			# Times discretized
 
-    n_simulations = 2 #total of simulations
+    # Total simulation time is end of last CS on/off cycle
+    tsim = t3 + tCS_dur + tCS_off
+    tstim= np.arange(0.0, tsim, delta_tr)
+
+    # Number of parallel repeat simulations
+    n_simulations = 2
 
     def renewal_fear_simulations(l):
-        seed(100+l)
+        """
+        Repeats the conditioning-extinction-renewal protocol.
+        l : integer seed offset (so each sim has distinct RNG)
+        Returns arrays of firing rates and synaptic weights.
+        """
+
+        seed(99+l)
         print("Running simulations: please wait")
         print("Simulation ID: {}".format(l+1))
+
+        # (Re)initialize Brian2 network & objects
         start_scope()
         net, neurons, conn, Pe, Pi, spikemon, statemon, PG_cs, PG_ctx_A, PG_ctx_B, CS_e, CS_i, CTX_A, CTX_B = amygdala_net(input=True, input_vars=input_vars)
+        # Run the full protocol
         net.run(tsim*ms, report='stdout')
 
+        # Unpack spike monitors for each population
         spikemon_ne, spikemon_ni, spikemon_A, spikemon_B = [spikemon[0],spikemon[1],spikemon[2],spikemon[3]]
         statemon_CS, statemon_CTX_A, statemon_CTX_B = [statemon[0], statemon[1], statemon[2]]
 
         ###########################################################################
-        # Results
+        # Results Analysis
         ###########################################################################
+        
+        # 1) Identify the time windows of each CS presentation
         nonzero_id = np.nonzero(m_array)
         winsize  = int(tCS_dur/delta_tr)
-
         ind  = 0
         cs_intervals = []
         for i in range(nCSA+nCSB+1):
             cs_intervals.append([tstim[nonzero_id][ind],tstim[nonzero_id][ind+winsize-1]])
             ind+=winsize
 
-
-        ###########################################################################
-        # Average firing rate for each subpopulation
-        ###########################################################################
+        # 2) Compute average firing rates of A & B populations during each CS
+        
         print("Calculating the average firing rate for each subpopulation")
-
+        
         timesA = spikemon_A.t/ms
         timesB = spikemon_B.t/ms
 
@@ -280,11 +329,11 @@ if protocol == 1:
             fr_A.append(np.sum((timesA>=i) & (timesA<=j))/(NA*tCS_dur/1000.0))
             fr_B.append(np.sum((timesB>=i) & (timesB<=j))/(NB*tCS_dur/1000.0))
 
-        ###########################################################################
-        # Average of CS and CTX weights
-        ###########################################################################
+        
+        # 3) Compute mean CS & CTX synaptic weights over time
         print("Calculating the average CS and CTX weights")
-
+        
+        # Extract and average weights from state monitors
         wCS_A = np.array(statemon_CS.wcs[:NA])
         wCS_B = np.array(statemon_CS.wcs[-NB:])
 
@@ -304,6 +353,7 @@ if protocol == 1:
         wCTX_A = wCTX_A[nonzero_id]
         wCTX_B = wCTX_B[nonzero_id]
 
+        # 4) Average weights in each CS window
         CS_A = []
         CS_B = []
         CTX_A = []
@@ -319,7 +369,7 @@ if protocol == 1:
 
             aux+=winsize
 
-        #saving the data from the last simulation
+        # 5) Optionally save the last simulation's raw data
         if((l+1)==30):
             np.save('renewal_fear/last_simulation_data.npy', \
                     {'spk_ni_t': spikemon_ni.t/ms,
