@@ -38,7 +38,7 @@ protocol = int(sys.argv[1])
 seed(100) # seed of the random number generator
 
 
-def make_figure(renewal_fear_simulations, n_simulations, t1, t2):
+def make_figure(renewal_fear_simulations, n_simulations, t1, t2, filename="averages.png"):
     """
     Runs parallel simulations, loads the last sim's spike data, computes
     time-binned firing rates for the final run, and then generates & saves:
@@ -222,9 +222,9 @@ def make_figure(renewal_fear_simulations, n_simulations, t1, t2):
         ax.set_xlabel('CS presentations')
         ax.text(-2, 2.7,"C", weight="bold", fontsize=30)
         ax.set_ylim(0,3)
-        
+
         # save summary figure
-        plt.savefig('renewal_fear/avarages.png', dpi = 200)
+        plt.savefig('fear_stages/' + filename, dpi = 200)
         # plt.show()
 
 
@@ -237,7 +237,7 @@ if protocol == 1:
     os.system('mkdir renewal_fear')
 
     # Build a single array 'aux' that represents one CS on/off cycle:
-    #   - 1 for duration tCS_dur, then 0 for duration tCS_off
+    #   1 for duration tCS_dur, then 0 for duration tCS_off
     aux	= np.zeros(int((tCS_dur+tCS_off)/delta_tr))
     aux[:int(tCS_dur/delta_tr)] = 1
 
@@ -384,4 +384,165 @@ if protocol == 1:
 
         return(fr_A, fr_B, CS_A/nS, CS_B/nS, CTX_A/nS, CTX_B/nS)
 
-    make_figure(renewal_fear_simulations, n_simulations, t1, t2)
+    make_figure(renewal_fear_simulations, n_simulations, t1, t2, 'normal.png')
+
+# ----------------------------------------------------------------------------
+# PTSD Fear Extinction (Protocol 1)
+# ----------------------------------------------------------------------------
+
+elif protocol == 2: 
+    # Create output directory for this protocol
+    os.system('mkdir renewal_fear')
+
+    # Build a single array 'aux' that represents one CS on/off cycle:
+    #   1 for duration tCS_dur, then 0 for duration tCS_off
+    aux	= np.zeros(int((tCS_dur+tCS_off)/delta_tr))
+    aux[:int(tCS_dur/delta_tr)] = 1
+
+    # Concatenate the stimulus pattern:
+    #   1) initial no-stim period of length tinit
+    #   2) nCSA repetitions of aux (CS + CTX-A on/off)
+    #   3) no-stim gap (CTX off)
+    #   4) nCSB repetitions of aux (CS + CTX-B on/off)
+    #   5) another no-stim gap
+    #   6) one final aux cycle
+    m_array = np.concatenate([np.zeros(int(tinit/delta_tr)),\
+                              np.tile(aux, nCSA),\
+                              np.zeros(int(tCTX_off/delta_tr)),\
+                              np.tile(aux, nCSB),\
+                              np.zeros(int(tCTX_off/delta_tr)),\
+                              np.tile(aux, 1)])
+    
+    # Wrap the raw on/off array into Brian2 TimedArray objects:
+    #   - mt: unitless 0/1; stimulus: firing rate (scaled by fCS)
+    mt       = TimedArray(m_array, dt=delta_tr*ms)
+    stimulus = TimedArray(m_array*fCS*Hz, dt=delta_tr*ms)
+
+    # Compute key time‐points for the protocol
+    t1 = tinit+tCTXA_dur            # end of first CTX A period
+    t2 = t1+tCTX_off                # start of CTX B period
+    t3 = t2+tCTXB_dur+tCTX_off      # end of second CTX B
+
+
+    # Prepare a dict of input‐rate expressions for the amygdala network
+    new_input_vars={
+                # CS neurons fire at 'stimulus' rate throughout
+                'cs_rate'  : 'stimulus(t)',
+                # CTX A active during initial CS A & final renewal window
+                'ctxA_rate': '((t>='+str(tinit)+'*ms)*(t<='+str(t1)+'*ms)+(t>='+str(t3)+'*ms))*'+str(fCTX)+'*Hz',
+                # CTX B active only in middle extinction window
+                'ctxB_rate': '((t>='+str(t2)+'*ms)*(t<='+str(t2+tCTXB_dur)+'*ms))*'+str(fCTX)+'*Hz'
+                }
+    input_vars.update(new_input_vars)
+
+    # Total simulation time is end of last CS on/off cycle
+    tsim = t3 + tCS_dur + tCS_off
+    tstim= np.arange(0.0, tsim, delta_tr)
+
+    # Number of parallel repeat simulations
+    n_simulations = 2
+
+    def renewal_fear_simulations(l):
+        """
+        Repeats the conditioning-extinction-renewal protocol.
+        l : integer seed offset (so each sim has distinct RNG)
+        Returns arrays of firing rates and synaptic weights.
+        """
+
+        seed(99+l)
+        print("Running simulations: please wait")
+        print("Simulation ID: {}".format(l+1))
+
+        # (Re)initialize Brian2 network & objects
+        start_scope()
+        net, neurons, conn, Pe, Pi, spikemon, statemon, PG_cs, PG_ctx_A, PG_ctx_B, CS_e, CS_i, CTX_A, CTX_B = amygdala_net(input=True, input_vars=input_vars)
+        # Run the full protocol
+        net.run(tsim*ms, report='stdout')
+
+        # Unpack spike monitors for each population
+        spikemon_ne, spikemon_ni, spikemon_A, spikemon_B = [spikemon[0],spikemon[1],spikemon[2],spikemon[3]]
+        statemon_CS, statemon_CTX_A, statemon_CTX_B = [statemon[0], statemon[1], statemon[2]]
+
+        ###########################################################################
+        # Results Analysis
+        ###########################################################################
+        
+        # 1) Identify the time windows of each CS presentation
+        nonzero_id = np.nonzero(m_array)
+        winsize  = int(tCS_dur/delta_tr)
+        ind  = 0
+        cs_intervals = []
+        for i in range(nCSA+nCSB+1):
+            cs_intervals.append([tstim[nonzero_id][ind],tstim[nonzero_id][ind+winsize-1]])
+            ind+=winsize
+
+        # 2) Compute average firing rates of A & B populations during each CS
+        
+        print("Calculating the average firing rate for each subpopulation")
+        
+        timesA = spikemon_A.t/ms
+        timesB = spikemon_B.t/ms
+
+        fr_A = []
+        fr_B = []
+
+        for i, j in cs_intervals:
+            fr_A.append(np.sum((timesA>=i) & (timesA<=j))/(NA*tCS_dur/1000.0))
+            fr_B.append(np.sum((timesB>=i) & (timesB<=j))/(NB*tCS_dur/1000.0))
+
+        
+        # 3) Compute mean CS & CTX synaptic weights over time
+        print("Calculating the average CS and CTX weights")
+        
+        # Extract and average weights from state monitors
+        wCS_A = np.array(statemon_CS.wcs[:NA])
+        wCS_B = np.array(statemon_CS.wcs[-NB:])
+
+        wCS_A = wCS_A.mean(axis=0)
+        wCS_B = wCS_B.mean(axis=0)
+
+        wCS_A = wCS_A[nonzero_id]
+        wCS_B = wCS_B[nonzero_id]
+
+        #CTX
+        wCTX_A = np.array(statemon_CTX_A.wctx)
+        wCTX_B = np.array(statemon_CTX_B.wctx)
+
+        wCTX_A = wCTX_A.mean(axis=0)
+        wCTX_B = wCTX_B.mean(axis=0)
+
+        wCTX_A = wCTX_A[nonzero_id]
+        wCTX_B = wCTX_B[nonzero_id]
+
+        # 4) Average weights in each CS window
+        CS_A = []
+        CS_B = []
+        CTX_A = []
+        CTX_B = []
+        aux = 0
+
+        for i in range(nCSA+nCSB+1):
+            CS_A.append(wCS_A[aux:aux+winsize].mean())
+            CS_B.append(wCS_B[aux:aux+winsize].mean())
+
+            CTX_A.append(wCTX_A[aux:aux+winsize].mean())
+            CTX_B.append(wCTX_B[aux:aux+winsize].mean())
+
+            aux+=winsize
+
+        # 5) Optionally save the last simulation's raw data
+        if((l+1)==30):
+            np.save('renewal_fear/last_simulation_data.npy', \
+                    {'spk_ni_t': spikemon_ni.t/ms,
+                    'spk_ne_t': spikemon_ne.t/ms,
+                    'spk_A': spikemon_A.t/ms,
+                    'spk_B': spikemon_B.t/ms,
+                    'ID_ni': np.array(spikemon_ni.i),
+                    'ID_ne': np.array(spikemon_ne.i),
+                    'ID_A': np.array(spikemon_A.i),
+                    'ID_B': np.array(spikemon_B.i),
+                    'cs_intervals': np.array(cs_intervals)})
+
+        return(fr_A, fr_B, CS_A/nS, CS_B/nS, CTX_A/nS, CTX_B/nS)
+
+    make_figure(renewal_fear_simulations, n_simulations, t1, t2, 'PTSD.png')
