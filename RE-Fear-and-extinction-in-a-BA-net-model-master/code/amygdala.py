@@ -104,10 +104,13 @@ def amygdala_net(input=False, input_vars=input_vars, pcon=pcon, wsyn=wsyn, sdel=
     ###########################################################################
 	# Creating poissonian background inputs
 	###########################################################################
-    # Excitatory background onto excitatory pop
-    Pe = PoissonInput(pop[0], 'Gexc_aux', 1000, rate_E, weight=w_e*Gexc_0)
-    # Excitatory background onto inhibitory pop
-    Pi = PoissonInput(pop[1], 'Gexc_aux', 1000, rate_I, weight=w_e*Gexc_0)
+    # Excitatory background onto excitatory and INH pop
+    if PTSD == True:
+        Pe = PoissonInput(pop[0], 'Gexc_aux', 1000, rate_E_impaired, weight=w_e*Gexc_0)
+        Pi = PoissonInput(pop[1], 'Gexc_aux', 1000, rate_I_impaired, weight=w_e*Gexc_0)
+    else:
+        Pe = PoissonInput(pop[0], 'Gexc_aux', 1000, rate_E, weight=w_e*Gexc_0)
+        Pi = PoissonInput(pop[1], 'Gexc_aux', 1000, rate_I, weight=w_e*Gexc_0)
 
     # Optional CS and CTX inputs
     if input==True:

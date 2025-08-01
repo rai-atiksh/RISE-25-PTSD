@@ -81,7 +81,8 @@ tauc = 10.0*ms
 w_min = 0.4*nS
 w_max = 4.0*nS
 alpha = 1.6e-3
-alpha_impaired = 0.1 * alpha    # Represents impaired learning rates - test different rates 
+# TODO: Test between 10% of original alpha to 70% of original alpha
+alpha_impaired = 0.1 * alpha
 c_u = 0.35
 h_u = 0.35
 
@@ -91,6 +92,10 @@ h_u = 0.35
 w_e     = 1.25*nS   # synaptic weight
 rate_E  = 5.0*Hz    # Poisson spiking firing rate to excitatory neurons
 rate_I  = 6.0*Hz    # Poisson spiking firing rate to inhibitory neurons
+
+# TODO: Test between 20%-50%
+rate_E_impaired = rate_E * 1.3
+rate_I_impaired = rate_I * 1.3
 
 #############################################################################
 # Defining input parameters

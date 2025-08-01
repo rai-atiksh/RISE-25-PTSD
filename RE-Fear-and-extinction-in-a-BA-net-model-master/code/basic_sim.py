@@ -262,7 +262,7 @@ if protocol == 1:
     # Compute key time‐points for the protocol
     t1 = tinit+tCTXA_dur            # end of first CTX A period
     t2 = t1+tCTX_off                # start of CTX B period
-    t3 = t2+tCTXB_dur+tCTX_off      # end of second CTX B
+    t3 = t2+tCTXB_dur+tCTX_off      # Start of renewal
 
 
     # Prepare a dict of input‐rate expressions for the amygdala network
@@ -388,6 +388,13 @@ if protocol == 1:
 # ----------------------------------------------------------------------------
 # PTSD Fear Extinction (Protocol 2)
 # ----------------------------------------------------------------------------
+# Changes:
+# 1. Uses alpha_impaired for fear extinction neuron plasticity
+#       - Decreases population b neuron plasticity and activity in E
+# 2. Increased background activity on both (consistent with https://doi.org/10.1002/hbm.23886)
+#       - Increases activity of both populations, but a larger relative increase in Fear pathway
+# 3. Increase CTX-A activity throughout fear extinction stage to represent impaired LI? activity
+#       -  
 
 elif protocol == 2: 
     # Create output directory for this protocol
@@ -421,7 +428,7 @@ elif protocol == 2:
     # Compute key time‐points for the protocol
     t1 = tinit+tCTXA_dur            # end of first CTX A period
     t2 = t1+tCTX_off                # start of CTX B period
-    t3 = t2+tCTXB_dur+tCTX_off      # end of second CTX B
+    t3 = t2+tCTXB_dur+tCTX_off      # end of second CTX B period
 
 
     # Prepare a dict of input‐rate expressions for the amygdala network
@@ -429,7 +436,8 @@ elif protocol == 2:
                 # CS neurons fire at 'stimulus' rate throughout
                 'cs_rate'  : 'stimulus(t)',
                 # CTX A active during initial CS A & final renewal window
-                'ctxA_rate': '((t>='+str(tinit)+'*ms)*(t<='+str(t1)+'*ms)+(t>='+str(t3)+'*ms))*'+str(fCTX)+'*Hz',
+                'ctxA_rate': '((t>='+str(tinit)+'*ms)*(t<='+str(t1)+'*ms)+ \
+                    (t>='+str(t3)+'*ms))*'+str(fCTX)+'*Hz',
                 # CTX B active only in middle extinction window
                 'ctxB_rate': '((t>='+str(t2)+'*ms)*(t<='+str(t2+tCTXB_dur)+'*ms))*'+str(fCTX)+'*Hz'
                 }
