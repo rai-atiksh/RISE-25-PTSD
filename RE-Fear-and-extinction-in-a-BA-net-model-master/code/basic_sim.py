@@ -38,7 +38,7 @@ protocol = int(sys.argv[1])
 seed(100) # seed of the random number generator
 
 
-def make_figure(renewal_fear_simulations, n_simulations, t1, t2, filename="averages.png"):
+def make_figure(fear_stages_simulations, n_simulations, t1, t2, filename="normal"):
     """
     Runs parallel simulations, loads the last sim's spike data, computes
     time-binned firing rates for the final run, and then generates & saves:
@@ -46,7 +46,7 @@ def make_figure(renewal_fear_simulations, n_simulations, t1, t2, filename="avera
       - Time-series of firing rates for A, B, and inhibitory populations
       - Summary panels (mean ± SEM) of firing rates, CS weights, and CTX weights
     Args:
-      renewal_fear_simulations : function to run one protocol repeat
+      fear_stages_simulations : function to run one protocol repeat
       n_simulations            : total repeats to average over
       t1, t2                   : protocol phase boundary times (ms)
     """
@@ -57,13 +57,13 @@ def make_figure(renewal_fear_simulations, n_simulations, t1, t2, filename="avera
         # --------------------------------------------------------------------
         processing_simulations = mp.Pool(6)
         # Map each simulation ID (0…n_simulations-1) to a worker
-        results = processing_simulations.map(renewal_fear_simulations, range(n_simulations))
+        results = processing_simulations.map(fear_stages_simulations, range(n_simulations))
 
 
         # --------------------------------------------------------------------
         # 2) Load the **last** simulation’s raw spike data
         # --------------------------------------------------------------------
-        data = np.load('renewal_fear/last_simulation_data.npy', allow_pickle=True)
+        data = np.load('fear_stages/last_simulation_data_' + filename + '.npy', allow_pickle=True)
         # Extract arrays by key
         spk_ni = data.item().get('spk_ni_t')    # inhibitory spike times (ms)
         spk_ne = data.item().get('spk_ne_t')    # excitatory spike times (ms)
@@ -167,7 +167,7 @@ def make_figure(renewal_fear_simulations, n_simulations, t1, t2, filename="avera
 
         # save raster + time‐series figure
         plt.tight_layout()
-        plt.savefig('renewal_fear/raster.png', dpi = 200)
+        plt.savefig('fear_stages/raster_' + filename + '.png', dpi = 200)
 
 
         # --------------------------------------------------------------------
@@ -224,7 +224,7 @@ def make_figure(renewal_fear_simulations, n_simulations, t1, t2, filename="avera
         ax.set_ylim(0,3)
 
         # save summary figure
-        plt.savefig('fear_stages/' + filename, dpi = 200)
+        plt.savefig('fear_stages/average_' + filename + '.png', dpi = 200)
         # plt.show()
 
 
@@ -234,7 +234,8 @@ def make_figure(renewal_fear_simulations, n_simulations, t1, t2, filename="avera
 
 if protocol == 1:
     # Create output directory for this protocol
-    os.system('mkdir renewal_fear')
+    os.system('mkdir fear_stages')
+    filename = 'normal'
 
     # Build a single array 'aux' that represents one CS on/off cycle:
     #   1 for duration tCS_dur, then 0 for duration tCS_off
@@ -272,7 +273,6 @@ if protocol == 1:
                 # CTX B active only in middle extinction window
                 'ctxB_rate': '((t>='+str(t2)+'*ms)*(t<='+str(t2+tCTXB_dur)+'*ms))*'+str(fCTX)+'*Hz'
                 }
-    input_vars.update(new_input_vars)
 
     # Total simulation time is end of last CS on/off cycle
     tsim = t3 + tCS_dur + tCS_off
@@ -281,7 +281,7 @@ if protocol == 1:
     # Number of parallel repeat simulations
     n_simulations = 2
 
-    def renewal_fear_simulations(l):
+    def fear_stages_simulations(l):
         """
         Repeats the conditioning-extinction-renewal protocol.
         l : integer seed offset (so each sim has distinct RNG)
@@ -294,7 +294,8 @@ if protocol == 1:
 
         # (Re)initialize Brian2 network & objects
         start_scope()
-        net, neurons, conn, Pe, Pi, spikemon, statemon, PG_cs, PG_ctx_A, PG_ctx_B, CS_e, CS_i, CTX_A, CTX_B = amygdala_net(input=True, input_vars=input_vars)
+        net, neurons, conn, Pe, Pi, spikemon, statemon, PG_cs, PG_ctx_A, PG_ctx_B, CS_e, CS_i, CTX_A, CTX_B = \
+            amygdala_net(input=True, input_vars=new_input_vars, pcon=pcon, wsyn=wsyn, sdel=sdelay, PTSD=False, record_weights=True)
         # Run the full protocol
         net.run(tsim*ms, report='stdout')
 
@@ -371,7 +372,7 @@ if protocol == 1:
 
         # 5) Optionally save the last simulation's raw data
         if((l+1)==30):
-            np.save('renewal_fear/last_simulation_data.npy', \
+            np.save('fear_stages/last_simulation_data_' + filename + '.npy', \
                     {'spk_ni_t': spikemon_ni.t/ms,
                     'spk_ne_t': spikemon_ne.t/ms,
                     'spk_A': spikemon_A.t/ms,
@@ -384,15 +385,16 @@ if protocol == 1:
 
         return(fr_A, fr_B, CS_A/nS, CS_B/nS, CTX_A/nS, CTX_B/nS)
 
-    make_figure(renewal_fear_simulations, n_simulations, t1, t2, 'normal.png')
+    make_figure(fear_stages_simulations, n_simulations, t1, t2, filename)
 
 # ----------------------------------------------------------------------------
-# PTSD Fear Extinction (Protocol 1)
+# PTSD Fear Extinction (Protocol 2)
 # ----------------------------------------------------------------------------
 
 elif protocol == 2: 
     # Create output directory for this protocol
-    os.system('mkdir renewal_fear')
+    os.system('mkdir fear_stages')
+    filename = 'PTSD'
 
     # Build a single array 'aux' that represents one CS on/off cycle:
     #   1 for duration tCS_dur, then 0 for duration tCS_off
@@ -433,7 +435,6 @@ elif protocol == 2:
                 # CTX B active only in middle extinction window
                 'ctxB_rate': '((t>='+str(t2)+'*ms)*(t<='+str(t2+tCTXB_dur)+'*ms))*'+str(fCTX)+'*Hz'
                 }
-    input_vars.update(new_input_vars)
 
     # Total simulation time is end of last CS on/off cycle
     tsim = t3 + tCS_dur + tCS_off
@@ -442,7 +443,7 @@ elif protocol == 2:
     # Number of parallel repeat simulations
     n_simulations = 2
 
-    def renewal_fear_simulations(l):
+    def fear_stages_simulations(l):
         """
         Repeats the conditioning-extinction-renewal protocol.
         l : integer seed offset (so each sim has distinct RNG)
@@ -455,7 +456,8 @@ elif protocol == 2:
 
         # (Re)initialize Brian2 network & objects
         start_scope()
-        net, neurons, conn, Pe, Pi, spikemon, statemon, PG_cs, PG_ctx_A, PG_ctx_B, CS_e, CS_i, CTX_A, CTX_B = amygdala_net(input=True, input_vars=input_vars)
+        net, neurons, conn, Pe, Pi, spikemon, statemon, PG_cs, PG_ctx_A, PG_ctx_B, CS_e, CS_i, CTX_A, CTX_B = \
+            amygdala_net(input=True, input_vars=new_input_vars,pcon=pcon, wsyn=wsyn, sdel=sdelay,PTSD=True,record_weights=True)
         # Run the full protocol
         net.run(tsim*ms, report='stdout')
 
@@ -532,7 +534,7 @@ elif protocol == 2:
 
         # 5) Optionally save the last simulation's raw data
         if((l+1)==30):
-            np.save('renewal_fear/last_simulation_data.npy', \
+            np.save('fear_stages/last_simulation_data_' + filename + '.npy', \
                     {'spk_ni_t': spikemon_ni.t/ms,
                     'spk_ne_t': spikemon_ne.t/ms,
                     'spk_A': spikemon_A.t/ms,
@@ -545,4 +547,4 @@ elif protocol == 2:
 
         return(fr_A, fr_B, CS_A/nS, CS_B/nS, CTX_A/nS, CTX_B/nS)
 
-    make_figure(renewal_fear_simulations, n_simulations, t1, t2, 'PTSD.png')
+    make_figure(fear_stages_simulations, n_simulations, t1, t2, 'PTSD')

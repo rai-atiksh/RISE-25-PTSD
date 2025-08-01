@@ -43,7 +43,7 @@ Ginh_0 = beta_normalization_factor(tauinh_rise, tauinh_decay)
 #############################################################################
 # Network structure with all inputs connected
 #############################################################################
-def amygdala_net(input=False, input_vars=input_vars, pcon=pcon, wsyn=wsyn, sdel=sdelay,record_weights=True):
+def amygdala_net(input=False, input_vars=input_vars, pcon=pcon, wsyn=wsyn, sdel=sdelay, PTSD=False, record_weights=True):
     """
     Build the amygdala network:
       - Leaky integrate-and-fire neurons (exc + inh)
@@ -141,6 +141,8 @@ def amygdala_net(input=False, input_vars=input_vars, pcon=pcon, wsyn=wsyn, sdel=
 
         #Context B connected with subpopulation B using synaptic plasticity
         CTX_B = Synapses(PG_ctx_B, pop_B, model = syn_plast, on_pre=pre_ctx)
+        if (PTSD == True): 
+            CTX_B.pre.code = pre_ctx_impaired
         CTX_B.connect(j='i')
         # CTX_B.m = input_vars['mt_array']
 

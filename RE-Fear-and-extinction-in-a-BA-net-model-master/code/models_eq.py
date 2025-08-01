@@ -80,3 +80,11 @@ pre_ctx    ='''
             Gexc_aux_post += wctx_post * Gexc_0
             '''
  
+pre_ctx_impaired    ='''
+            tctx_post = t
+            h_post+= h_u
+            delta_t = abs(tcs_post - tctx_post)
+            wcs_post+= mt(t)*alpha_impaired*h_post*abs(w_max-wcs_post)*c_post*(delta_t<100.0*ms) - mt(t)*alpha_impaired*abs(w_min-wcs_post)*c_post*(delta_t>100.0*ms)
+            wctx_post+= mt(t)*alpha_impaired*h_post*abs(w_max-wctx_post)*c_post*(delta_t<100.0*ms) - mt(t)*alpha_impaired*abs(w_min-wctx_post)*c_post*(delta_t>100.0*ms)
+            Gexc_aux_post += wctx_post * Gexc_0
+            '''
