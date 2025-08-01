@@ -38,6 +38,10 @@ protocol = int(sys.argv[1])
 seed(100) # seed of the random number generator
 
 
+# Number of parallel repeat simulations
+n_simulations = 2
+
+
 def make_figure(fear_stages_simulations, n_simulations, t1, t2, filename="normal"):
     """
     Runs parallel simulations, loads the last sim's spike data, computes
@@ -52,10 +56,7 @@ def make_figure(fear_stages_simulations, n_simulations, t1, t2, filename="normal
     """
     # Only execute when script is run directly (not when imported)
     if __name__ == '__main__':
-        # --------------------------------------------------------------------
-        # 1) Launch parallel workers (use 6 cores on an M2 Air)
-        # --------------------------------------------------------------------
-        processing_simulations = mp.Pool(6)
+        processing_simulations = mp.Pool(2)
         # Map each simulation ID (0…n_simulations-1) to a worker
         results = processing_simulations.map(fear_stages_simulations, range(n_simulations))
 
@@ -278,9 +279,6 @@ if protocol == 1:
     tsim = t3 + tCS_dur + tCS_off
     tstim= np.arange(0.0, tsim, delta_tr)
 
-    # Number of parallel repeat simulations
-    n_simulations = 2
-
     def fear_stages_simulations(l):
         """
         Repeats the conditioning-extinction-renewal protocol.
@@ -371,7 +369,7 @@ if protocol == 1:
             aux+=winsize
 
         # 5) Optionally save the last simulation's raw data
-        if((l+1)==30):
+        if((l+1)==n_simulations):
             np.save('fear_stages/last_simulation_data_' + filename + '.npy', \
                     {'spk_ni_t': spikemon_ni.t/ms,
                     'spk_ne_t': spikemon_ne.t/ms,
@@ -439,9 +437,6 @@ elif protocol == 2:
     # Total simulation time is end of last CS on/off cycle
     tsim = t3 + tCS_dur + tCS_off
     tstim= np.arange(0.0, tsim, delta_tr)
-
-    # Number of parallel repeat simulations
-    n_simulations = 2
 
     def fear_stages_simulations(l):
         """
@@ -533,7 +528,7 @@ elif protocol == 2:
             aux+=winsize
 
         # 5) Optionally save the last simulation's raw data
-        if((l+1)==30):
+        if((l+1)==n_simulations):
             np.save('fear_stages/last_simulation_data_' + filename + '.npy', \
                     {'spk_ni_t': spikemon_ni.t/ms,
                     'spk_ne_t': spikemon_ne.t/ms,

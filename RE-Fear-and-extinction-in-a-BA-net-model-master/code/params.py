@@ -81,7 +81,7 @@ tauc = 10.0*ms
 w_min = 0.4*nS
 w_max = 4.0*nS
 alpha = 1.6e-3
-alpha_impaired = 0.5 * alpha    # Represents impaired learning rates - test different rates 
+alpha_impaired = 0.1 * alpha    # Represents impaired learning rates - test different rates 
 c_u = 0.35
 h_u = 0.35
 
