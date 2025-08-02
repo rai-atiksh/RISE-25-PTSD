@@ -159,7 +159,8 @@ def make_figure(fear_stages_simulations, n_simulations, t1, t2, filename="normal
             ax.plot([i,j],[-2,-2],'k-', lw = 3)
         ax.axvline(t1, ls='--', lw=2, color='black')
         ax.axvline(t2+tCTXB_dur, ls='--', lw=2, color='black')
-        ax.set_ylim(-3,20)
+        ax.set_ylim(-3,30)
+        ax.set_yticks(range(0, 31, 10))
         ax.set_xlim(50,tsim)
         ax.set_ylabel("Frequency (Hz)")
         ax.set_xlabel("Time (ms)")
@@ -397,7 +398,7 @@ if protocol == 1:
 #       - Inhibits decrease of fear pathway during neutral contexts
 #       - Makes Renewal worsen the situation more. TODO: source that it gets worse?
 # 4. TODO: Excitation–Inhibition (E/I) imbalance
-#       - In practice, one can lower the number or strength of active interneurons in the amygdala network.
+#       - In practice, one can lower the strength of active interneurons in the amygdala network.
 #       - Previous simulations (see Figure 12 of the reference) show that deactivating even 50–90% of interneurons
 #         during extinction dramatically boosts fear activityresearchgate.net. This mirrors PTSD studies where trauma
 #         increases dopamine release that suppresses amygdala intercalated interneurons, collapsing inhibitory gatingfrontiersin.org
@@ -563,3 +564,4 @@ elif protocol == 2:
         return(fr_A, fr_B, CS_A/nS, CS_B/nS, CTX_A/nS, CTX_B/nS)
 
     make_figure(fear_stages_simulations, n_simulations, t1, t2, 'PTSD')
+

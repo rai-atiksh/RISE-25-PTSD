@@ -66,6 +66,13 @@ wsyn = [[1.25*nS,  #wee: excitatory to excitatory
         [2.5*nS,   #wie: inhibitory to excitatory
          2.5*nS]]  #wii: inhibitory to inhibitory
 
+# TODO: test ratios
+wsyn_ratio = 0.7
+wsyn_impaired = [[1.25*nS,  #wee: excitatory to excitatory
+                  1.25*nS * wsyn_ratio], #wei: excitatory to inhibitory
+                 [2.5*nS,   #wie: inhibitory to excitatory
+                  2.5*nS * wsyn_ratio]]  #wii: inhibitory to inhibitory
+
 wcs  = 'randn()*0.1*nS + 0.9*nS'    #from CS to all neurons
 wctx = 'randn()*0.05*nS + 0.4*nS'   #from CTX to all neurons
 

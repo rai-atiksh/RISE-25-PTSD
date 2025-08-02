@@ -89,7 +89,11 @@ def amygdala_net(input=False, input_vars=input_vars, pcon=pcon, wsyn=wsyn, sdel=
     conn = []  # list to hold all Synapses objects
     for pre in range(0,2):          # loop over pre populations: 0=exc, 1=inh
         for post in range(0,2):     # loop over post populations
-            ws  = wsyn[pre][post]   # baseline weight
+            # baseline weights
+            if PTSD == True and post == 0:
+                ws = wsyn_impaired[pre][post]
+            else:
+                ws  = wsyn[pre][post]
             g_0 = G_0[pre]          # normalization factor
 
             conn.append(Synapses(
