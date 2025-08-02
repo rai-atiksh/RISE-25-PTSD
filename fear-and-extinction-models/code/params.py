@@ -28,8 +28,8 @@ Define network parameters
 #############################################################################
 # Network parameters
 #############################################################################
-NE = 3400   #excitatory neurons
-NI = 600    #inhibitory neurons 
+NE = 3200   #excitatory neurons
+NI = 800    #inhibitory neurons 
 
 NA = NB = int(NE*0.2) #number of excitatory neurons divided in subpopulation
 
@@ -87,9 +87,9 @@ tauh = 10.0*ms
 tauc = 10.0*ms
 w_min = 0.4*nS
 w_max = 4.0*nS
-alpha = 1.6e-3
+alpha = 2e-3
 # TODO: Test Learning Rate (10%-70% of original alpha)
-alpha_impaired = 0.5 * alpha
+alpha_impaired = 0.3 * alpha
 c_u = 0.35
 h_u = 0.35
 
@@ -116,8 +116,8 @@ fCTX		= 300.0			# CTX firing rate
 fCTX_boosted_r = 1.1        # Small boost in acquisition
 fCTX_impaired_r = 0.1       # Small boost in extinction
 
-nCSA 		= 3				# Number of CS presentations to population A
-nCSB 		= 3				# Number of CS presentations to population B
+nCSA 		= 4				# Number of CS presentations to population A
+nCSB 		= 5				# Number of CS presentations to population B
 tCS_dur  	= 50.0			# CS duration in ms
 tCS_off 	= 150.0			# Time in ms between two consecutive CS presentation
 

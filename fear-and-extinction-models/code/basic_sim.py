@@ -56,9 +56,10 @@ def make_figure(fear_stages_simulations, n_simulations, t1, t2, filename="normal
     """
     # Only execute when script is run directly (not when imported)
     if __name__ == '__main__':
-        processing_simulations = mp.Pool(2)
+        # TODO: remove commented lines
+        # processing_simulations = mp.Pool(2)
         # Map each simulation ID (0…n_simulations-1) to a worker
-        results = processing_simulations.map(fear_stages_simulations, range(n_simulations))
+        # results = processing_simulations.map(fear_stages_simulations, range(n_simulations))
 
 
         # --------------------------------------------------------------------
@@ -93,10 +94,10 @@ def make_figure(fear_stages_simulations, n_simulations, t1, t2, filename="normal
         # --------------------------------------------------------------------
         # 4) Raster & rate‐time‐series plot for the **last** run
         # --------------------------------------------------------------------
-        fig = plt.figure(constrained_layout=False, figsize=(15,10))
-        gs = fig.add_gridspec(13,1)
+        fig = plt.figure(constrained_layout=False, figsize=(10,10))
+        gs = fig.add_gridspec(21,1)
 
-        ax = fig.add_subplot(gs[0:7, 0])
+        ax = fig.add_subplot(gs[0:10, 0])
         ax.plot(spk_ne, ID_ne, 'k.', ms=2) #all excitatory exneurons
         ax.plot(spk_ni, ID_ni + 3400, 'r.', ms=2) #inhibitory neurons
         ax.plot(spk_A, ID_A, '.', ms=4, color="tab:orange") #sub-pop A - fear neurons
@@ -107,9 +108,10 @@ def make_figure(fear_stages_simulations, n_simulations, t1, t2, filename="normal
         # plt.plot(tstim[nonzero_id],-100.0*np.ones(size(nonzero_id)),'.k')
 
         # annotate protocol phases
-        ax.text(350, -350, 'CONDITIONING')
-        ax.text(1650, -350, 'EXTINCTION')
-        ax.text(2430, -350, 'RENEWAL')
+        # TODO change values here
+        ax.text(250, -350, 'CONDITIONING', fontsize=15)
+        ax.text(1250, -350, 'EXTINCTION', fontsize=15)
+        ax.text(2100, -350, 'REN.', fontsize=15)
         # phase‐boundary lines
         ax.axvline(t1, ls='--', lw=2, color='black')
         ax.axvline(t2+tCTXB_dur, ls='--', lw=2, color='black')
@@ -117,116 +119,39 @@ def make_figure(fear_stages_simulations, n_simulations, t1, t2, filename="normal
         ax.set_xlim(50,tsim)
         ax.set_ylabel('# Neuron')
         ax.set_xlabel('Time (ms)')
-        ax.text(-200, 3800,"A", weight="bold", fontsize=30)
+        ax.text(-250, 3800, "A", weight="bold", fontsize=30)
 
         ax.get_xaxis().set_visible(False)
         
         # 4b) Firing‐rate time‐series for sub-pops A & B (rows 7–9)
-        ax = fig.add_subplot(gs[7:10, 0])
+        ax = fig.add_subplot(gs[11:21, 0])
 
         ax.plot(fr_B_last[1][:-1], matlab_smooth(fr_B_last[0]*1000/(bin_f*NI), 5), lw=2)
         ax.plot(fr_A_last[1][:-1], matlab_smooth(fr_A_last[0]*1000/(bin_f*NI), 5), lw=2)
 
+        ax.set_xlim(50, tsim)
+        ax.set_ylim(-0.25, 2.3)       # match your desired frequency range
+        ax.set_yticks(range(0, 3)) # adjust ticks if needed
+
+        ax.set_ylabel("Frequency (Hz)")
+        ax.set_xlabel("Time (ms)")
+        ax.text(-250, 2.15, "B", weight="bold", fontsize=30)
+
         #ax.plot(fr_BB[1][:-1], fr_BB[0]*1000/(bin_f*NI),lw=2)
         #ax.plot(fr_AA[1][:-1], fr_AA[0]*1000/(bin_f*NI),lw=2)
         #ax.plot(fr_IH[1][:-1], fr_IH[0]*1000/(bin_f*NI), 'r-')
         #plt.plot(fr_EX[1][:-1], fr_EX[0]*1000/(bin_f*NI), 'b-')
 
         # overlay CS bars & phase lines
-        for i,j in cs_intervals:
-            ax.plot([i,j],[-0.5,-0.5],'k-', lw = 3)
+        for i, j in cs_intervals:
+            ax.plot([i, j], [0, 0], 'k-', lw=3)  # move to y=0 (or any fixed visible baseline)
+
         ax.axvline(t1, ls='--', lw=2, color='black')
-        ax.axvline(t2+tCTXB_dur, ls='--', lw=2, color='black')
-        ax.set_xlim(50,tsim)
-        ax.set_ylim(-0.7,4.5)
-        ax.axvline(t2+tCTXB_dur, ls='--', lw=2, color='black')
-
-        ax.set_ylabel("Frequency (Hz)")
-        ax.set_xlabel("Time (ms)")
-        ax.text(-200, 3.8,"B", weight="bold", fontsize=30)
-        ax.get_xaxis().set_visible(False)
-
-        # 4c) Firing‐rate time‐series for inhibitory pop (rows 10–12)
-        ax = fig.add_subplot(gs[10:, 0])
-        #ax.plot(fr_BB[1][:-1], fr_BB[0]*1000/(bin_f*NI),lw=2)
-        #ax.plot(fr_AA[1][:-1], fr_AA[0]*1000/(bin_f*NI),lw=2)
-        #ax.plot(fr_IH[1][:-1], fr_IH[0]*1000/(bin_f*NI), 'r-')
-        ax.plot(fr_IH_last[1][:-1], matlab_smooth(fr_IH_last[0]*1000/(bin_f*NI), 5), 'r-')
-        #plt.plot(fr_EX[1][:-1], fr_EX[0]*1000/(bin_f*NI), 'b-')
-
-        # overlay CS bars & phase lines
-        for i,j in cs_intervals:
-            ax.plot([i,j],[-2,-2],'k-', lw = 3)
-        ax.axvline(t1, ls='--', lw=2, color='black')
-        ax.axvline(t2+tCTXB_dur, ls='--', lw=2, color='black')
-        ax.set_ylim(-3,30)
-        ax.set_yticks(range(0, 31, 10))
-        ax.set_xlim(50,tsim)
-        ax.set_ylabel("Frequency (Hz)")
-        ax.set_xlabel("Time (ms)")
-        #ax.get_xaxis().set_visible(False)
-        ax.text(-200, 17,"C", weight="bold", fontsize=30)
+        ax.axvline(t2 + tCTXB_dur, ls='--', lw=2, color='black')
 
         # save raster + time‐series figure
-        plt.tight_layout()
         plt.savefig('fear_stages/raster_' + filename + '.png', dpi = 200)
 
-
-        # --------------------------------------------------------------------
-        # 5) Summary figure: mean ± SEM across all repeats
-        # --------------------------------------------------------------------
-        n_CS = nCSA + nCSB + 1 #total CS presentation
-
-        fig = plt.figure(constrained_layout=True, figsize=(7,10))
-        gs = fig.add_gridspec(6,1)
-
-        ax = fig.add_subplot(gs[0:2, 0])
-        ax.errorbar(range(1,n_CS+1),np.mean(results, axis=0)[0], yerr=np.std(results, axis=0)[0], fmt='s', ms=10, capsize=3, label = r"$pop_A$", color=plt.cm.tab10(1))
-        ax.errorbar(range(1,n_CS+1),np.mean(results, axis=0)[1], yerr=np.std(results, axis=0)[1], fmt='o', ms=10, capsize=3, label = r"$pop_B$", color=plt.cm.tab10(0))
-        ax.axvline(5.5, ls='--', lw=2, color='black')
-        ax.axvline(11.5, ls='--', lw=2, color='black')
-
-        ax.set_xticks(range(n_CS+1))
-        ax.set_ylim(-0.2,5)
-        ax.text(0.8, 4.5, 'CONDITIONING')
-        ax.text(6.9, 4.5, 'EXTINCTION')
-        ax.text(11.9, 3.5, 'RENEWAL', horizontalalignment='center', verticalalignment='center', rotation=270)
-        ax.set_ylabel('Firing rate (Hz)')
-        ax.set_xlabel('CS presentations')
-        legend = ax.legend(bbox_to_anchor=(0.25,0.87), fontsize=15)
-        legend.get_frame().set_alpha(0)
-        ax.get_xaxis().set_visible(False)
-        ax.text(-2, 4.4,"A", weight="bold", fontsize=30)
-
-
-        ax = fig.add_subplot(gs[2:4, 0])
-        ax.errorbar(range(1,n_CS+1),np.mean(results, axis=0)[3], yerr=np.std(results, axis=0)[3], fmt='o', ms=10, capsize=3)
-        ax.errorbar(range(1,n_CS+1),np.mean(results, axis=0)[2], yerr=np.std(results, axis=0)[2], fmt='s', ms=10, capsize=3)
-        ax.axvline(5.5, ls='--', lw=2, color='black')
-        ax.axvline(11.5, ls='--', lw=2, color='black')
-
-        ax.set_xticks(range(n_CS+1))
-        ax.set_ylabel('CS weights (nS)')
-        ax.set_xlabel('CS presentations')
-        ax.set_ylim(0,3)
-        ax.get_xaxis().set_visible(False)
-        ax.text(-2, 2.7,"B", weight="bold", fontsize=30)
-
-
-        ax = fig.add_subplot(gs[4:6, 0])
-        ax.errorbar(range(1,n_CS+1),np.mean(results, axis=0)[5], yerr=np.std(results, axis=0)[5], fmt='o', ms=10, capsize=3)
-        ax.errorbar(range(1,n_CS+1),np.mean(results, axis=0)[4], yerr=np.std(results, axis=0)[4], fmt='s', ms=10, capsize=3)
-        ax.axvline(5.5, ls='--', lw=2, color='black')
-        ax.axvline(11.5, ls='--', lw=2, color='black')
-
-        ax.set_xticks(range(n_CS+1))
-        ax.set_ylabel('HPC weights (nS)')
-        ax.set_xlabel('CS presentations')
-        ax.text(-2, 2.7,"C", weight="bold", fontsize=30)
-        ax.set_ylim(0,3)
-
-        # save summary figure
-        plt.savefig('fear_stages/average_' + filename + '.png', dpi = 200)
         # plt.show()
 
 
