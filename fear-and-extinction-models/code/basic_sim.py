@@ -175,7 +175,7 @@ def make_figure(fear_stages_simulations, n_simulations, t1, t2, filename="normal
         # --------------------------------------------------------------------
         # 5) Summary figure: mean ± SEM across all repeats
         # --------------------------------------------------------------------
-        n_CS = 12 #total CS presentation
+        n_CS = nCSA + nCSB + 1 #total CS presentation
 
         fig = plt.figure(constrained_layout=True, figsize=(7,10))
         gs = fig.add_gridspec(6,1)
@@ -446,7 +446,7 @@ elif protocol == 2:
                 # (t3<=init) +
                 # (t2<=t<=t3) * fCTX * Hz
                 'ctxA_rate': '((t>='+str(tinit)+'*ms)*(t<='+str(t1)+'*ms)*fCTX_boosted_r+ \
-                             (t>='+str(t3)+'*ms*)*fCTX_boosted_r+ \
+                             (t>='+str(t3)+'*ms)+ \
                              (t>='+str(t2)+'*ms)*(t<='+str(t2+tCTXB_dur)+'*ms)*fCTX_impaired_r)' + '*'+str(fCTX)+'*Hz', 
                 # CTX B active only in middle extinction window
                 'ctxB_rate': '((t>='+str(t2)+'*ms)*(t<='+str(t2+tCTXB_dur)+'*ms))*'+str(fCTX)+'*Hz'

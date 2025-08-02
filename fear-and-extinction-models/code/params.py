@@ -66,7 +66,7 @@ wsyn = [[1.25*nS,  #wee: excitatory to excitatory
         [2.5*nS,   #wie: inhibitory to excitatory
          2.5*nS]]  #wii: inhibitory to inhibitory
 
-# TODO: test ratios
+# TODO: Test decreased synapse weights (chemical changes)
 wsyn_ratio = 0.9
 wsyn_impaired = [[1.25*nS,  #wee: excitatory to excitatory
                   1.25*nS * wsyn_ratio], #wei: excitatory to inhibitory
@@ -87,9 +87,9 @@ tauh = 10.0*ms
 tauc = 10.0*ms
 w_min = 0.4*nS
 w_max = 4.0*nS
-alpha = 1.6e-3
-# TODO: Test between 10% of original alpha to 70% of original alpha
-alpha_impaired = 0.3 * alpha
+alpha = 1.3e-3
+# TODO: Test Learning Rate (10%-70% of original alpha)
+alpha_impaired = 0.25 * alpha
 c_u = 0.35
 h_u = 0.35
 
@@ -100,7 +100,7 @@ w_e     = 1.25*nS   # synaptic weight
 rate_E  = 5.0*Hz    # Poisson spiking firing rate to excitatory neurons
 rate_I  = 6.0*Hz    # Poisson spiking firing rate to inhibitory neurons
 
-# TODO: Test between 10%-50%
+# TODO: Test increased background activity (between 10%-50%)
 rate_impaired_ratio = 1.1
 rate_E_impaired = rate_E * rate_impaired_ratio
 rate_I_impaired = rate_I * rate_impaired_ratio
@@ -112,12 +112,12 @@ fCS			= 500.0			# CS firing rate
 fCTX		= 300.0			# CTX firing rate
 
 # Ratio of impaired CTX firing rate to normal in PTSD
-# TODO: Test Ratio
-fCTX_boosted_r = 1.3        # Makes CTXA more present in association
-fCTX_impaired_r = 0.3       # Small boost in extinction
+# TODO: Test boost of CTX-A (Ratio)
+fCTX_boosted_r = 1.1        # Small boost in acquisition
+fCTX_impaired_r = 0.1       # Small boost in extinction
 
 nCSA 		= 5				# Number of CS presentations to population A
-nCSB 		= 6				# Number of CS presentations to population B
+nCSB 		= 7				# Number of CS presentations to population B
 tCS_dur  	= 50.0			# CS duration in ms
 tCS_off 	= 150.0			# Time in ms between two consecutive CS presentation
 
