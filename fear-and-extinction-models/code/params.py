@@ -67,7 +67,7 @@ wsyn = [[1.25*nS,  #wee: excitatory to excitatory
          2.5*nS]]  #wii: inhibitory to inhibitory
 
 # TODO: test ratios
-wsyn_ratio = 0.7
+wsyn_ratio = 0.8
 wsyn_impaired = [[1.25*nS,  #wee: excitatory to excitatory
                   1.25*nS * wsyn_ratio], #wei: excitatory to inhibitory
                  [2.5*nS,   #wie: inhibitory to excitatory
