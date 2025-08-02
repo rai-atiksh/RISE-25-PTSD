@@ -397,12 +397,9 @@ if protocol == 1:
 # 3. Increase CTX-A activity throughout fear extinction stage to represent impaired LI? activity
 #       - Inhibits decrease of fear pathway during neutral contexts
 #       - Makes Renewal worsen the situation more. TODO: source that it gets worse?
+#       - Also increases during acquisition stages
 # 4. TODO: Excitation–Inhibition (E/I) imbalance
 #       - In practice, one can lower the strength of active interneurons in the amygdala network.
-#       - Previous simulations (see Figure 12 of the reference) show that deactivating even 50–90% of interneurons
-#         during extinction dramatically boosts fear activityresearchgate.net. This mirrors PTSD studies where trauma
-#         increases dopamine release that suppresses amygdala intercalated interneurons, collapsing inhibitory gatingfrontiersin.org
-#         TODO: Study if this is realistic
 #       
 
 elif protocol == 2: 
@@ -448,8 +445,8 @@ elif protocol == 2:
                 # ((init<=t<=t1) + 
                 # (t3<=init) +
                 # (t2<=t<=t3) * fCTX * Hz
-                'ctxA_rate': '((t>='+str(tinit)+'*ms)*(t<='+str(t1)+'*ms)+ \
-                             (t>='+str(t3)+'*ms)+ \
+                'ctxA_rate': '((t>='+str(tinit)+'*ms)*(t<='+str(t1)+'*ms)*fCTX_boosted_r+ \
+                             (t>='+str(t3)+'*ms*)*fCTX_boosted_r+ \
                              (t>='+str(t2)+'*ms)*(t<='+str(t2+tCTXB_dur)+'*ms)*fCTX_impaired_r)' + '*'+str(fCTX)+'*Hz', 
                 # CTX B active only in middle extinction window
                 'ctxB_rate': '((t>='+str(t2)+'*ms)*(t<='+str(t2+tCTXB_dur)+'*ms))*'+str(fCTX)+'*Hz'

@@ -90,7 +90,7 @@ def amygdala_net(input=False, input_vars=input_vars, pcon=pcon, wsyn=wsyn, sdel=
     for pre in range(0,2):          # loop over pre populations: 0=exc, 1=inh
         for post in range(0,2):     # loop over post populations
             # baseline weights
-            if PTSD == True and post == 0:
+            if PTSD == True:
                 ws = wsyn_impaired[pre][post]
             else:
                 ws  = wsyn[pre][post]

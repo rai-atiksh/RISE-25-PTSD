@@ -67,7 +67,7 @@ wsyn = [[1.25*nS,  #wee: excitatory to excitatory
          2.5*nS]]  #wii: inhibitory to inhibitory
 
 # TODO: test ratios
-wsyn_ratio = 0.8
+wsyn_ratio = 0.9
 wsyn_impaired = [[1.25*nS,  #wee: excitatory to excitatory
                   1.25*nS * wsyn_ratio], #wei: excitatory to inhibitory
                  [2.5*nS,   #wie: inhibitory to excitatory
@@ -89,7 +89,7 @@ w_min = 0.4*nS
 w_max = 4.0*nS
 alpha = 1.6e-3
 # TODO: Test between 10% of original alpha to 70% of original alpha
-alpha_impaired = 0.1 * alpha
+alpha_impaired = 0.3 * alpha
 c_u = 0.35
 h_u = 0.35
 
@@ -113,7 +113,8 @@ fCTX		= 300.0			# CTX firing rate
 
 # Ratio of impaired CTX firing rate to normal in PTSD
 # TODO: Test Ratio
-fCTX_impaired_r = 0.2
+fCTX_boosted_r = 1.3        # Makes CTXA more present in association
+fCTX_impaired_r = 0.3       # Small boost in extinction
 
 nCSA 		= 5				# Number of CS presentations to population A
 nCSB 		= 6				# Number of CS presentations to population B
