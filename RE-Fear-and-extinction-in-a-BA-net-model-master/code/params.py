@@ -29,7 +29,7 @@ Define network parameters
 # Network parameters
 #############################################################################
 NE = 3400   #excitatory neurons
-NI = 600    #inhibitory neurons
+NI = 600    #inhibitory neurons 
 
 NA = NB = int(NE*0.2) #number of excitatory neurons divided in subpopulation
 
@@ -93,15 +93,20 @@ w_e     = 1.25*nS   # synaptic weight
 rate_E  = 5.0*Hz    # Poisson spiking firing rate to excitatory neurons
 rate_I  = 6.0*Hz    # Poisson spiking firing rate to inhibitory neurons
 
-# TODO: Test between 20%-50%
-rate_E_impaired = rate_E * 1.3
-rate_I_impaired = rate_I * 1.3
+# TODO: Test between 10%-50%
+rate_impaired_ratio = 1.1
+rate_E_impaired = rate_E * rate_impaired_ratio
+rate_I_impaired = rate_I * rate_impaired_ratio
 
 #############################################################################
 # Defining input parameters
 #############################################################################
 fCS			= 500.0			# CS firing rate
 fCTX		= 300.0			# CTX firing rate
+
+# Ratio of impaired CTX firing rate to normal in PTSD
+# TODO: Test Ratio
+fCTX_impaired_r = 0.2
 
 nCSA 		= 5				# Number of CS presentations to population A
 nCSB 		= 6				# Number of CS presentations to population B
