@@ -43,7 +43,7 @@ Ginh_0 = beta_normalization_factor(tauinh_rise, tauinh_decay)
 #############################################################################
 # Network structure with all inputs connected
 #############################################################################
-def amygdala_net(input=False, input_vars=input_vars, pcon=pcon, wsyn=wsyn, sdel=sdelay, PTSD=False, record_weights=True):
+def amygdala_net(input=False, input_vars=input_vars, pcon=pcon, wsyn=wsyn, sdel=sdelay, PTSD=False, DBS=0, record_weights=True):
     """
     Build the amygdala network:
       - Leaky integrate-and-fire neurons (exc + inh)
@@ -139,18 +139,50 @@ def amygdala_net(input=False, input_vars=input_vars, pcon=pcon, wsyn=wsyn, sdel=
         CS_i.connect(j='i')
         CS_i.w = 'randn()*0.1*nS + 0.9*nS'
 
+        # Applies DBS
+        t_condition_start = tinit
+        t_condition_end = t_condition_start + tCTXA_dur
+        t_extinction_start = t_condition_end + tCTX_off
+        t_extinction_end = t_extinction_start + tCTXB_dur
+        f_dbs = 130*Hz         # DBS frequency
+        pulse_times_condition = np.arange(t_condition_start, t_condition_end, (1/f_dbs)/ms) * ms
+        pulse_times_extinction = np.arange(t_extinction_start, t_extinction_end, 1/f_dbs/ms) * ms
+        if (DBS==1):
+            # DBS parameters
+            DBS_source = SpikeGeneratorGroup(1, np.zeros(len(pulse_times_condition)), pulse_times_condition)
+            S_dbs_E = Synapses(DBS_source, pop[0], on_pre='v_post += 5*mV')
+            S_dbs_E.connect()
+            S_dbs_I = Synapses(DBS_source, pop[1], on_pre='v_post += 5*mV')
+            S_dbs_I.connect()
+        elif (DBS==2):
+            DBS_source = SpikeGeneratorGroup(1, np.zeros(len(pulse_times_extinction)), pulse_times_extinction)
+            S_dbs_E = Synapses(DBS_source, pop[0], on_pre='v_post += 5*mV')
+            S_dbs_E.connect()
+            S_dbs_I = Synapses(DBS_source, pop[1], on_pre='v_post += 5*mV')
+            S_dbs_I.connect()
+        
+        @network_operation(dt=1*ms)
+        def control_dbs():
+            CTX_B.DBS_on = (DBS == 2) * (t_extinction_start <= defaultclock.t / ms) * (defaultclock.t / ms <= t_extinction_end)
+
         #############################################################################
         # Connect context A & B groups with plastic synapses
         #############################################################################
         CTX_A = Synapses(PG_ctx_A, pop_A, model = syn_plast, on_pre=pre_ctx)
         CTX_A.connect(j='i')
         # CTX_A.m = input_vars['mt_array']
+        CTX_A.DBS_on = 0
 
         #Context B connected with subpopulation B using synaptic plasticity
         CTX_B = Synapses(PG_ctx_B, pop_B, model = syn_plast, on_pre=pre_ctx)
         if (PTSD == True): 
             CTX_B.pre.code = pre_ctx_impaired
+            if (DBS == 2):
+                CTX_B.pre.code = pre_ctx_DBS
+        
+
         CTX_B.connect(j='i')
+        CTX_A.DBS_on = 0
         # CTX_B.m = input_vars['mt_array']
 
     else:
