@@ -49,6 +49,7 @@ E0      = -70.0*mV         # resting potential
 Eexc    = 0.0*mV           # reversal potential for excitatory synapses
 Einh    = -80.0*mV         # reversal potential for inhibitory synapses
 taum    = 15.0*ms          # membrane time constant
+tau_block = 100*ms
 Cm      = 250.0*pF         # membrane capacitance
 Gl      = 16.7*nS          # leakage conductance
 

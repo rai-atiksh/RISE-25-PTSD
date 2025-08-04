@@ -25,6 +25,7 @@
 
 from params     import *
 from amygdala   import *
+# from make_fig   import *
 
 import sys
 import os
@@ -40,6 +41,7 @@ seed(100) # seed of the random number generator
 
 # Number of parallel repeat simulations
 n_simulations = 2
+
 
 def make_old_figure(fear_stages_simulations, n_simulations, t1, t2, filename="normal"):
     """
@@ -291,7 +293,6 @@ def make_figure(fear_stages_simulations, n_simulations, t1, t2, filename="normal
 
 if protocol == 1:
     # Create output directory for this protocol
-    os.system('mkdir fear_stages')
     filename = 'normal'
 
     # Build a single array 'aux' that represents one CS on/off cycle:
@@ -459,7 +460,6 @@ if protocol == 1:
 
 elif protocol == 2: 
     # Create output directory for this protocol
-    os.system('mkdir fear_stages')
     filename = 'PTSD'
 
     # Build a single array 'aux' that represents one CS on/off cycle:
@@ -625,7 +625,6 @@ elif protocol == 2:
 
 elif protocol == 3: 
     # Create output directory for this protocol
-    os.system('mkdir fear_stages')
     filename = 'DBS1'
 
     # Build a single array 'aux' that represents one CS on/off cycle:
@@ -792,7 +791,6 @@ elif protocol == 3:
 
 elif protocol == 4: 
     # Create output directory for this protocol
-    os.system('mkdir fear_stages')
     filename = 'DBS2'
 
     # Build a single array 'aux' that represents one CS on/off cycle:

@@ -56,6 +56,7 @@ def amygdala_net(input=False, input_vars=input_vars, pcon=pcon, wsyn=wsyn, sdel=
     # Neuron group definitions
     #############################################################################
     # Combined excitatory (NE) + inhibitory (NI) neurons
+
     neurons = NeuronGroup(
         NE+NI,
         eq_LIF,                 # LIF Equations
@@ -151,19 +152,19 @@ def amygdala_net(input=False, input_vars=input_vars, pcon=pcon, wsyn=wsyn, sdel=
             # DBS parameters
             DBS_source = SpikeGeneratorGroup(1, np.zeros(len(pulse_times_condition)), pulse_times_condition)
             S_dbs_E = Synapses(DBS_source, pop[0], on_pre='v_post += 5*mV')
-            S_dbs_E.connect()
+            S_dbs_E.connect(p="0.5")
             S_dbs_I = Synapses(DBS_source, pop[1], on_pre='v_post += 5*mV')
-            S_dbs_I.connect()
+            S_dbs_I.connect(p="0.5")
         elif (DBS==2):
             DBS_source = SpikeGeneratorGroup(1, np.zeros(len(pulse_times_extinction)), pulse_times_extinction)
             S_dbs_E = Synapses(DBS_source, pop[0], on_pre='v_post += 5*mV')
-            S_dbs_E.connect()
+            S_dbs_E.connect(p="0.5")
             S_dbs_I = Synapses(DBS_source, pop[1], on_pre='v_post += 5*mV')
-            S_dbs_I.connect()
-        
-        @network_operation(dt=1*ms)
-        def control_dbs():
-            CTX_B.DBS_on = (DBS == 2) * (t_extinction_start <= defaultclock.t / ms) * (defaultclock.t / ms <= t_extinction_end)
+            S_dbs_I.connect(p="0.5")
+
+            @network_operation(dt=1*ms)
+            def control_dbs():
+                CTX_B.DBS_on = (t_extinction_start <= defaultclock.t / ms) * (defaultclock.t / ms <= t_extinction_end)
 
         #############################################################################
         # Connect context A & B groups with plastic synapses
@@ -179,10 +180,8 @@ def amygdala_net(input=False, input_vars=input_vars, pcon=pcon, wsyn=wsyn, sdel=
             CTX_B.pre.code = pre_ctx_impaired
             if (DBS == 2):
                 CTX_B.pre.code = pre_ctx_DBS
-        
-
         CTX_B.connect(j='i')
-        CTX_A.DBS_on = 0
+        CTX_B.DBS_on = 0
         # CTX_B.m = input_vars['mt_array']
 
     else:
