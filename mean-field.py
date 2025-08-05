@@ -195,22 +195,21 @@ class MeanValueModel:
         cea_ptsd_des_extinction = activity_ptsd_des_extinction['CeA']
         cea_ptsd_des_ex_re = activity_ptsd_des_ex_re['CeA']
 
-        # Finding the difference in their peaks during acquisition vs renewal
-        diff_normal = max(cea_normal[ : int(length / 3)]) - max(cea_normal[int(2 * length / 3) : ])
-        diff_ptsd_no_des = max(cea_ptsd_no_des[ : int(length / 3)]) - max(cea_ptsd_no_des[int(2 * length / 3) : ])
-        diff_ptsd_des_acquisition = max(cea_ptsd_des_acquisition[ : int(length / 3)]) - max(cea_ptsd_des_acquisition[int(2 * length / 3) : ])
-        diff_ptsd_des_extinction = max(cea_ptsd_des_extinction[ : int(length / 3)]) - max(cea_ptsd_des_extinction[int(2 * length / 3) : ])
-        diff_ptsd_des_ex_re = max(cea_ptsd_des_ex_re[ : int(length / 3)]) - max(cea_ptsd_des_ex_re[int(2 * length / 3) : ])
+        # Finding the % change in their peaks during acquisition vs renewal
+        diff_normal = (max(cea_normal[int(2 * length / 3) : ]) - max(cea_normal[ : int(length / 3)])) / max(cea_normal[ : int(length / 3)]) * 100
+        diff_ptsd_no_des = (max(cea_ptsd_no_des[int(2 * length / 3) : ]) - max(cea_ptsd_no_des[ : int(length / 3)])) /  max(cea_ptsd_no_des[ : int(length / 3)]) * 100
+        diff_ptsd_des_acquisition = (max(cea_ptsd_des_acquisition[int(2 * length / 3) : ]) - max(cea_ptsd_des_acquisition[ : int(length / 3)])) / max(cea_ptsd_des_acquisition[ : int(length / 3)]) * 100
+        diff_ptsd_des_extinction = (max(cea_ptsd_des_extinction[int(2 * length / 3) : ]) - max(cea_ptsd_des_extinction[ : int(length / 3)])) / max(cea_ptsd_des_extinction[ : int(length / 3)]) * 100
+        diff_ptsd_des_ex_re = (max(cea_ptsd_des_ex_re[int(2 * length / 3) : ]) - max(cea_ptsd_des_ex_re[ : int(length / 3)])) / max(cea_ptsd_des_ex_re[ : int(length / 3)]) * 100
 
         # Plotting it
-        catgories = ["Normal", "PTSD(No DES)", "PTSD(DES acquisition)", "PTSD(DES extinction)", "PTSD(DES extinction-renewal)"]
+        catgories = ["Normal", "PTSD(No DES)", "PTSD(DES acquisition)", "PTSD(DES extinction)", "PTSD(DES extinction & renewal)"]
         values = [diff_normal, diff_ptsd_no_des, diff_ptsd_des_acquisition ,diff_ptsd_des_extinction, diff_ptsd_des_ex_re]
         plt.figure(figsize=(13, 6))
         plt.bar(catgories, values)
-        plt.ylabel("Difference in fear peaks(Acquisition - Renewal)", fontsize=14)
-        plt.xlabel("Condition", fontsize=14)
+        plt.ylabel("% Change in fear peaks(Acquisition - Renewal)", fontsize=14)
         plt.tick_params(axis="both", labelsize=10)
-        plt.title("Fear Response Drop off Across Conditions(ptsd_factor = " + str(ptsd_factor) + ")", fontsize=16)
+        plt.title("Fear Response Drop off Across Conditions (ptsd_factor = " + str(ptsd_factor) + ")", fontsize=16)
 
         plt.show()
 
