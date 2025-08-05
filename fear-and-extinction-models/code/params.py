@@ -90,8 +90,8 @@ w_min = 0.4*nS
 w_max = 4.0*nS
 alpha = 2e-3
 # TODO: Test Learning Rate (10%-70% of original alpha)
-alpha_impaired = 0.5 * alpha 
-alpha_DBS_r = 1
+alpha_impaired = 0.3 * alpha 
+alpha_DBS = alpha * 2
 c_u = 0.35
 h_u = 0.35
 
@@ -103,9 +103,8 @@ rate_E  = 5.0*Hz    # Poisson spiking firing rate to excitatory neurons
 rate_I  = 6.0*Hz    # Poisson spiking firing rate to inhibitory neurons
 
 # TODO: Test increased background activity (really sensitive, so needs to be low)
-rate_impaired_ratio = 1.2
-rate_E_impaired = rate_E * rate_impaired_ratio
-rate_I_impaired = rate_I * rate_impaired_ratio
+rate_E_impaired = rate_E * 1.2
+rate_I_impaired = rate_I * 1.1
 
 #############################################################################
 # Defining input parameters
@@ -115,7 +114,7 @@ fCTX		= 300.0			# CTX firing rate
 
 # Ratio of impaired CTX firing rate to normal in PTSD
 # TODO: Test boost of CTX-A (Ratio)
-fCTX_boosted_r = 1.2        # Small boost in acquisition
+fCTX_boosted_r = 1.5        # Small boost in acquisition
 fCTX_impaired_r = 0.1       # Small boost in extinction
 
 nCSA 		= 3				# Number of CS presentations to population A
@@ -133,15 +132,16 @@ t2 = t1+tCTX_off                # start of CTX B period
 t3 = t2+tCTXB_dur+tCTX_off      # end of second CTX B period
 tsim = t3 + tCS_dur + tCS_off
 
-
-delta_tr = 0.1                						# Temporal resolution (ms)
-nbins    = int(tsim/delta_tr)        				# Length of simulation (bins)
-tstim	 = np.arange(0.0, tsim, delta_tr)			# Times discretized
-
 t_condition_start = tinit
 t_condition_end = t_condition_start + tCTXA_dur
 t_extinction_start = t_condition_end + tCTX_off
 t_extinction_end = t_extinction_start + tCTXB_dur
+
+
+
+delta_tr = 0.1                						# Temporal resolution (ms)
+nbins    = int(tsim/delta_tr)        				# Length of simulation (bins)
+tstim	 = np.arange(0.0, tsim, delta_tr)			# Times discretized
 
 
 input_vars={

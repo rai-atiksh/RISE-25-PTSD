@@ -92,10 +92,9 @@ def amygdala_net(input=False, input_vars=input_vars, pcon=pcon, wsyn=wsyn, sdel=
     for pre in range(0,2):          # loop over pre populations: 0=exc, 1=inh
         for post in range(0,2):     # loop over post populations
             # baseline weights
+            ws  = wsyn[pre][post]
             if PTSD == True:
                 ws = wsyn_impaired[pre][post]
-            else:
-                ws  = wsyn[pre][post]
             g_0 = G_0[pre]          # normalization factor
 
             conn.append(Synapses(
@@ -144,30 +143,29 @@ def amygdala_net(input=False, input_vars=input_vars, pcon=pcon, wsyn=wsyn, sdel=
         CS_i.connect(j='i')
         CS_i.w = 'randn()*0.1*nS + 0.9*nS'
 
-        # Applies DBS
-        if (DBS == 1):
+        aux	= np.zeros(int((tCS_dur+tCS_off)/delta_tr))
+        aux[:int(tCS_dur/delta_tr)*2] = 1
+
+        if DBS == 1:
             # During conditioning
             @network_operation(dt=1*ms)
             def apply_dbs_condition():
                 if t_condition_start <= defaultclock.t/ms <= t_condition_end:
-                    # Boost inhibitory population during DBS window
                     pop[0].Vt = Vt + 1.5*mV
-                    pop[1].Vt = Vt + 1.5*mV
                 else:
-                    # Restore thresholds outside DBS
+                    if t_condition_end - 10 <= defaultclock.t/ms <= t_condition_end + 10:
+                        pop[0].v = Ek
                     pop[0].Vt = Vt
-                    pop[1].Vt = Vt
-        elif (DBS == 2):
+        elif DBS == 2:
             # During extinction
             @network_operation(dt=1*ms)
             def apply_dbs_extinction():
                 if t_extinction_start <= defaultclock.t/ms <= t_extinction_end:
-                    # Boost inhibitory tone
-                    pop[0].Vt = Vt + 1.5*mV
-                    pop[1].Vt = Vt + 1.5*mV
+                    pop[0].Vt = Vt + 1.25*mV
                 else:
+                    if t_extinction_end - 10 <= defaultclock.t/ms <= t_extinction_end + 10:
+                        pop[0].v = Ek
                     pop[0].Vt = Vt
-                    pop[1].Vt = Vt
 
         #############################################################################
         # Connect context A & B groups with plastic synapses
@@ -175,15 +173,17 @@ def amygdala_net(input=False, input_vars=input_vars, pcon=pcon, wsyn=wsyn, sdel=
 
         CTX_A = Synapses(PG_ctx_A, pop_A, model = syn_plast, on_pre=pre_ctx)
         CTX_A.connect(j='i')
-
         if PTSD:
-            CTX_A_ext = Synapses(PG_ctx_A_ext[0:int(len(pop_A)*0.1)], pop_A, model = syn_plast, on_pre=pre_ctx)
+            CTX_A_ext = Synapses(PG_ctx_A_ext[0:int(len(pop_A)*(0.1-(DBS==2)*0.07))], pop_A, model = syn_plast, on_pre=pre_ctx)
             CTX_A_ext.connect(j='i')
 
         #Context B connected with subpopulation B using synaptic plasticity
         CTX_B = Synapses(PG_ctx_B, pop_B, model = syn_plast, on_pre=pre_ctx)
         if PTSD: 
             CTX_B.pre.code = pre_ctxB_impaired
+            # if DBS != 0:
+            #     CTX_B.pre.code = pre_ctxB_DBS
+                
         CTX_B.connect(j='i')
 
 

@@ -110,8 +110,8 @@ pre_ctxB_DBS ='''
             tctx_post = t
             h_post+= h_u
             delta_t = abs(tcs_post - tctx_post)
-            wcs_post+= mt(t)*alpha*(1+DBS_on*(alpha_DBS_r))*h_post*abs(w_max-wcs_post)*c_post*(delta_t<100.0*ms) - mt(t)*alpha*(1+DBS_on*(alpha_DBS_r))*abs(w_min-wcs_post)*c_post*(delta_t>100.0*ms)
-            wctx_post+= mt(t)*alpha*(1+DBS_on*(alpha_DBS_r))*h_post*abs(w_max-wctx_post)*c_post*(delta_t<100.0*ms) - mt(t)*alpha*(1+DBS_on*(alpha_DBS_r))*abs(w_min-wctx_post)*c_post*(delta_t>100.0*ms)
+            wcs_post+= mt(t)*alpha_DBS*h_post*abs(w_max-wcs_post)*c_post*(delta_t<100.0*ms) - mt(t)*alpha_DBS*abs(w_min-wcs_post)*c_post*(delta_t>100.0*ms)
+            wctx_post+= mt(t)*alpha_DBS*h_post*abs(w_max-wctx_post)*c_post*(delta_t<100.0*ms) - mt(t)*alpha_DBS*abs(w_min-wctx_post)*c_post*(delta_t>100.0*ms)
             Gexc_aux_post += wctx_post * Gexc_0
             '''
             
