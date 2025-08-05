@@ -43,7 +43,7 @@ Ginh_0 = beta_normalization_factor(tauinh_rise, tauinh_decay)
 #############################################################################
 # Network structure with all inputs connected
 #############################################################################
-def amygdala_net(input=False, input_vars=input_vars, pcon=pcon, wsyn=wsyn, sdel=sdelay, PTSD=False, record_weights=True):
+def amygdala_net(input=False, input_vars=input_vars, pcon=pcon, wsyn=wsyn, sdel=sdelay, PTSD=False, DBS=0, record_weights=True):
     """
     Build the amygdala network:
       - Leaky integrate-and-fire neurons (exc + inh)
@@ -56,6 +56,7 @@ def amygdala_net(input=False, input_vars=input_vars, pcon=pcon, wsyn=wsyn, sdel=
     # Neuron group definitions
     #############################################################################
     # Combined excitatory (NE) + inhibitory (NI) neurons
+
     neurons = NeuronGroup(
         NE+NI,
         eq_LIF,                 # LIF Equations
@@ -64,6 +65,7 @@ def amygdala_net(input=False, input_vars=input_vars, pcon=pcon, wsyn=wsyn, sdel=
         refractory=tref,        # Absolute Refractory Period 
         method='rk4'            # Calculation Method
     )
+    neurons.Vt = Vt
 
     # Initialize membrane potential around resting plus noise
     neurons.v    = 'E0 + randn()*3.0*mV'
@@ -123,6 +125,8 @@ def amygdala_net(input=False, input_vars=input_vars, pcon=pcon, wsyn=wsyn, sdel=
         #############################################################################
         #initially the inputs are not active.
         PG_cs    = PoissonGroup(len(neurons), rates = input_vars['cs_rate'])
+        if PTSD:
+            PG_ctx_A_ext = PoissonGroup(len(pop_A), rates = input_vars['ctxA_diminished'])
         PG_ctx_A = PoissonGroup(len(pop_A), rates = input_vars['ctxA_rate'])
         PG_ctx_B = PoissonGroup(len(pop_B), rates = input_vars['ctxB_rate'])
 
@@ -136,22 +140,52 @@ def amygdala_net(input=False, input_vars=input_vars, pcon=pcon, wsyn=wsyn, sdel=
 
         #connecting CS to all inhibitory neurons using static synapses
         CS_i = Synapses(PG_cs[NE:], pop[1], model = syn_model, on_pre = pre_exc)
+
         CS_i.connect(j='i')
         CS_i.w = 'randn()*0.1*nS + 0.9*nS'
+
+        # Applies DBS
+        if (DBS == 1):
+            # During conditioning
+            @network_operation(dt=1*ms)
+            def apply_dbs_condition():
+                if t_condition_start <= defaultclock.t/ms <= t_condition_end:
+                    # Boost inhibitory population during DBS window
+                    pop[0].Vt = Vt + 1.5*mV
+                    pop[1].Vt = Vt + 1.5*mV
+                else:
+                    # Restore thresholds outside DBS
+                    pop[0].Vt = Vt
+                    pop[1].Vt = Vt
+        elif (DBS == 2):
+            # During extinction
+            @network_operation(dt=1*ms)
+            def apply_dbs_extinction():
+                if t_extinction_start <= defaultclock.t/ms <= t_extinction_end:
+                    # Boost inhibitory tone
+                    pop[0].Vt = Vt + 1.5*mV
+                    pop[1].Vt = Vt + 1.5*mV
+                else:
+                    pop[0].Vt = Vt
+                    pop[1].Vt = Vt
 
         #############################################################################
         # Connect context A & B groups with plastic synapses
         #############################################################################
+
         CTX_A = Synapses(PG_ctx_A, pop_A, model = syn_plast, on_pre=pre_ctx)
         CTX_A.connect(j='i')
-        # CTX_A.m = input_vars['mt_array']
+
+        if PTSD:
+            CTX_A_ext = Synapses(PG_ctx_A_ext[0:int(len(pop_A)*0.1)], pop_A, model = syn_plast, on_pre=pre_ctx)
+            CTX_A_ext.connect(j='i')
 
         #Context B connected with subpopulation B using synaptic plasticity
         CTX_B = Synapses(PG_ctx_B, pop_B, model = syn_plast, on_pre=pre_ctx)
-        if (PTSD == True): 
-            CTX_B.pre.code = pre_ctx_impaired
+        if PTSD: 
+            CTX_B.pre.code = pre_ctxB_impaired
         CTX_B.connect(j='i')
-        # CTX_B.m = input_vars['mt_array']
+
 
     else:
         # If no external inputs, set placeholders
