@@ -19,10 +19,12 @@
 # Equations for the neuron, synapse and plasticity models.
 # ----------------------------------------------------------------------------
 
+from params import *
 
 #############################################################################
 # Neuron model equations
 #############################################################################
+
 eq_LIF = '''
         dv/dt = (Gl * (E0 - v) + Gexc * (Eexc - v) + Ginh * (Einh - v)) / Cm : volt (unless refractory)
 
@@ -50,7 +52,14 @@ reset_LIF = '''
 #############################################################################
 # Synapse model equations
 #############################################################################
-syn_model = ''' w   : siemens'''
+syn_model = '''
+            w : siemens
+            '''
+syn_model_CTXA_PTSD = '''
+            w : siemens
+            on_during_extinction : boolean
+            '''
+
 pre_exc   = '''
             Gexc_aux_post += w*Gexc_0
             '''
@@ -63,9 +72,8 @@ pre_eq    = [pre_exc, pre_inh]
 #############################################################################
 # Synaptic plasticity model equations
 #############################################################################
-syn_plast  =''' delta_t : second
-                DBS_on : 1
-            '''
+syn_plast  ='''delta_t : second'''
+
 pre_cs     ='''
             tcs_post = t
             c_post += c_u
@@ -82,8 +90,15 @@ pre_ctx    ='''
             wctx_post+= mt(t)*alpha*h_post*abs(w_max-wctx_post)*c_post*(delta_t<100.0*ms) - mt(t)*alpha*abs(w_min-wctx_post)*c_post*(delta_t>100.0*ms)
             Gexc_aux_post += wctx_post * Gexc_0
             '''
- 
-pre_ctx_impaired ='''
+pre_ctxA_PTSD = '''
+            tctx_post = t
+            h_post+= h_u
+            delta_t = abs(tcs_post - tctx_post)
+            wcs_post+= mt(t)*alpha*h_post*abs(w_max-wcs_post)*c_post*(delta_t<100.0*ms) - mt(t)*alpha*abs(w_min-wcs_post)*c_post*(delta_t>100.0*ms)
+            wctx_post+= mt(t)*alpha*h_post*abs(w_max-wctx_post)*c_post*(delta_t<100.0*ms) - mt(t)*alpha*abs(w_min-wctx_post)*c_post*(delta_t>100.0*ms)
+            Gexc_aux_post += wctx_post * Gexc_0
+            '''
+pre_ctxB_impaired ='''
             tctx_post = t
             h_post+= h_u
             delta_t = abs(tcs_post - tctx_post)
@@ -91,7 +106,7 @@ pre_ctx_impaired ='''
             wctx_post+= mt(t)*alpha_impaired*h_post*abs(w_max-wctx_post)*c_post*(delta_t<100.0*ms) - mt(t)*alpha_impaired*abs(w_min-wctx_post)*c_post*(delta_t>100.0*ms)
             Gexc_aux_post += wctx_post * Gexc_0
             '''
-pre_ctx_DBS ='''
+pre_ctxB_DBS ='''
             tctx_post = t
             h_post+= h_u
             delta_t = abs(tcs_post - tctx_post)

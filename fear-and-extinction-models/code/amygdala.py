@@ -125,6 +125,8 @@ def amygdala_net(input=False, input_vars=input_vars, pcon=pcon, wsyn=wsyn, sdel=
         #############################################################################
         #initially the inputs are not active.
         PG_cs    = PoissonGroup(len(neurons), rates = input_vars['cs_rate'])
+        if PTSD:
+            PG_ctx_A_ext = PoissonGroup(len(pop_A), rates = input_vars['ctxA_diminished'])
         PG_ctx_A = PoissonGroup(len(pop_A), rates = input_vars['ctxA_rate'])
         PG_ctx_B = PoissonGroup(len(pop_B), rates = input_vars['ctxB_rate'])
 
@@ -138,51 +140,52 @@ def amygdala_net(input=False, input_vars=input_vars, pcon=pcon, wsyn=wsyn, sdel=
 
         #connecting CS to all inhibitory neurons using static synapses
         CS_i = Synapses(PG_cs[NE:], pop[1], model = syn_model, on_pre = pre_exc)
+
         CS_i.connect(j='i')
         CS_i.w = 'randn()*0.1*nS + 0.9*nS'
 
         # Applies DBS
-        t_condition_start = tinit
-        t_condition_end = t_condition_start + tCTXA_dur
-        t_extinction_start = t_condition_end + tCTX_off
-        t_extinction_end = t_extinction_start + tCTXB_dur
         if (DBS == 1):
             # During conditioning
             @network_operation(dt=1*ms)
             def apply_dbs_condition():
                 if t_condition_start <= defaultclock.t/ms <= t_condition_end:
                     # Boost inhibitory population during DBS window
-                    pop[0].Vt = Vt + 1*mV  # Raise threshold for projection neurons (silence output)
+                    pop[0].Vt = Vt + 1.5*mV
+                    pop[1].Vt = Vt + 1.5*mV
                 else:
                     # Restore thresholds outside DBS
                     pop[0].Vt = Vt
+                    pop[1].Vt = Vt
         elif (DBS == 2):
             # During extinction
             @network_operation(dt=1*ms)
             def apply_dbs_extinction():
                 if t_extinction_start <= defaultclock.t/ms <= t_extinction_end:
                     # Boost inhibitory tone
-                    pop[0].Vt = Vt + 1*mV
+                    pop[0].Vt = Vt + 1.5*mV
+                    pop[1].Vt = Vt + 1.5*mV
                 else:
                     pop[0].Vt = Vt
+                    pop[1].Vt = Vt
 
         #############################################################################
         # Connect context A & B groups with plastic synapses
         #############################################################################
+
         CTX_A = Synapses(PG_ctx_A, pop_A, model = syn_plast, on_pre=pre_ctx)
         CTX_A.connect(j='i')
-        # CTX_A.m = input_vars['mt_array']
-        CTX_A.DBS_on = 0
+
+        if PTSD:
+            CTX_A_ext = Synapses(PG_ctx_A_ext[0:int(len(pop_A)*0.1)], pop_A, model = syn_plast, on_pre=pre_ctx)
+            CTX_A_ext.connect(j='i')
 
         #Context B connected with subpopulation B using synaptic plasticity
         CTX_B = Synapses(PG_ctx_B, pop_B, model = syn_plast, on_pre=pre_ctx)
-        if (PTSD == True): 
-            CTX_B.pre.code = pre_ctx_impaired
-            if (DBS == 2):
-                CTX_B.pre.code = pre_ctx_DBS
+        if PTSD: 
+            CTX_B.pre.code = pre_ctxB_impaired
         CTX_B.connect(j='i')
-        CTX_B.DBS_on = 0
-        # CTX_B.m = input_vars['mt_array']
+
 
     else:
         # If no external inputs, set placeholders

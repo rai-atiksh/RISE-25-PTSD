@@ -25,7 +25,7 @@
 
 from params     import *
 from amygdala   import *
-# from make_fig   import *
+from make_fig   import *
 
 import sys
 import os
@@ -40,7 +40,7 @@ seed(99) # seed of the random number generator
 
 
 # Number of parallel repeat simulations
-n_simulations = 30
+n_simulations = 2
 
 
 def make_old_figure(fear_stages_simulations, n_simulations, t1, t2, filename="normal"):
@@ -187,6 +187,11 @@ def make_figure(fear_stages_simulations, n_simulations, t1, t2, filename="normal
       t1, t2                   : protocol phase boundary times (ms)
     """
     # Only execute when script is run directly (not when imported)
+
+    # # results = []
+    # for sim_id in range(n_simulations):
+    #     result = fear_stages_simulations(sim_id)
+    #     # results.append(result)
     if __name__ == '__main__':
         # TODO: remove commented lines
         processing_simulations = mp.Pool(2)
@@ -460,20 +465,22 @@ if protocol == 1:
 
 elif protocol == 2: 
     # Create output directory for this protocol
-    filename = 'PTSD'
+    DBS = int(sys.argv[2])
+    if (DBS == 0):
+        filename = 'PTSD'
+    elif (DBS == 1):
+        filename = 'DBS1'
+    elif (DBS == 2):
+        filename = 'DBS2'
+    else:
+        sys.exit()
 
     # Build a single array 'aux' that represents one CS on/off cycle:
     #   1 for duration tCS_dur, then 0 for duration tCS_off
     aux	= np.zeros(int((tCS_dur+tCS_off)/delta_tr))
     aux[:int(tCS_dur/delta_tr)] = 1
 
-    # Concatenate the stimulus pattern:
-    #   1) initial no-stim period of length tinit
-    #   2) nCSA repetitions of aux (CS + CTX-A on/off)
-    #   3) no-stim gap (CTX off)
-    #   4) nCSB repetitions of aux (CS + CTX-B on/off)
-    #   5) another no-stim gap
-    #   6) one final aux cycle
+    # Stimulus Pattern
     m_array = np.concatenate([np.zeros(int(tinit/delta_tr)),\
                               np.tile(aux, nCSA),\
                               np.zeros(int(tCTX_off/delta_tr)),\
@@ -482,7 +489,6 @@ elif protocol == 2:
                               np.tile(aux, 1)])
     
     # Wrap the raw on/off array into Brian2 TimedArray objects:
-    #   - mt: unitless 0/1; stimulus: firing rate (scaled by fCS)
     mt       = TimedArray(m_array, dt=delta_tr*ms)
     stimulus = TimedArray(m_array*fCS*Hz, dt=delta_tr*ms)
 
@@ -496,13 +502,8 @@ elif protocol == 2:
     new_input_vars={
                 # CS neurons fire at 'stimulus' rate throughout
                 'cs_rate'  : 'stimulus(t)',
-                # CTX A active during initial CS A & final renewal window
-                # ((init<=t<=t1) + 
-                # (t3<=init) +
-                # (t2<=t<=t3) * fCTX * Hz
-                'ctxA_rate': '((t>='+str(tinit)+'*ms)*(t<='+str(t1)+'*ms)*fCTX_boosted_r+ \
-                             (t>='+str(t3)+'*ms)+ \
-                             (t>='+str(t2)+'*ms)*(t<='+str(t2+tCTXB_dur)+'*ms)*fCTX_impaired_r)' + '*'+str(fCTX)+'*Hz', 
+                'ctxA_rate': '((t>='+str(tinit)+'*ms)*(t<='+str(t1)+'*ms)+(t>='+str(t3)+'*ms))*'+str(fCTX)+'*Hz',
+                'ctxA_diminished': '(t>='+str(t2)+'*ms)*(t<='+str(t2+tCTXB_dur)+'*ms)'+'*'+str(fCTX)+'*Hz',
                 # CTX B active only in middle extinction window
                 'ctxB_rate': '((t>='+str(t2)+'*ms)*(t<='+str(t2+tCTXB_dur)+'*ms))*'+str(fCTX)+'*Hz'
                 }
@@ -525,7 +526,7 @@ elif protocol == 2:
         # (Re)initialize Brian2 network & objects
         start_scope()
         net, neurons, conn, Pe, Pi, spikemon, statemon, PG_cs, PG_ctx_A, PG_ctx_B, CS_e, CS_i, CTX_A, CTX_B = \
-            amygdala_net(input=True, input_vars=new_input_vars,pcon=pcon, wsyn=wsyn, sdel=sdelay,PTSD=True,record_weights=True)
+            amygdala_net(input=True, input_vars=new_input_vars,pcon=pcon, wsyn=wsyn, sdel=sdelay,PTSD=True,DBS=DBS,record_weights=True)
         # Run the full protocol
         net.run(tsim*ms, report='stdout')
 
@@ -672,9 +673,7 @@ elif protocol == 3:
                 'ctxB_rate': '((t>='+str(t2)+'*ms)*(t<='+str(t2+tCTXB_dur)+'*ms))*'+str(fCTX)+'*Hz'
                 }
 
-    # Total simulation time is end of last CS on/off cycle
-    tsim = t3 + tCS_dur + tCS_off
-    tstim= np.arange(0.0, tsim, delta_tr)
+    tstim = np.arange(0.0, tsim, delta_tr)
 
     def fear_stages_simulations(l):
         """
@@ -832,15 +831,15 @@ elif protocol == 4:
                 # (t3<=init) +
                 # (t2<=t<=t3) * fCTX * Hz
                 'ctxA_rate': '((t>='+str(tinit)+'*ms)*(t<='+str(t1)+'*ms)*fCTX_boosted_r+ \
-                             (t>='+str(t3)+'*ms)+ \
-                             (t>='+str(t2)+'*ms)*(t<='+str(t2+tCTXB_dur)+'*ms)*fCTX_impaired_r)' + '*'+str(fCTX)+'*Hz', 
+                             (t>='+str(t3)+'*ms)+'+'*'+str(fCTX)+'*Hz',
+                'ctxA_diminished': '(t>='+str(t2)+'*ms)*(t<='+str(t2+tCTXB_dur)+'*ms))', 
                 # CTX B active only in middle extinction window
                 'ctxB_rate': '((t>='+str(t2)+'*ms)*(t<='+str(t2+tCTXB_dur)+'*ms))*'+str(fCTX)+'*Hz'
                 }
 
     # Total simulation time is end of last CS on/off cycle
     tsim = t3 + tCS_dur + tCS_off
-    tstim= np.arange(0.0, tsim, delta_tr)
+    tstim = np.arange(0.0, tsim, delta_tr)
 
     def fear_stages_simulations(l):
         """

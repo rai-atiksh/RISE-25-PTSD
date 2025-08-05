@@ -128,10 +128,21 @@ tCTXB_dur = nCSB*(tCS_dur+tCS_off)	# CTX_B duration in ms
 tCTX_off  = 100.0					# Time with both CTX turned off
 
 tinit	 = 100.0									# Initial time for transient
-tsim 	 = tinit + tCTXA_dur + tCTX_off + tCTXB_dur	# Total time of simulation
+t1 = tinit+tCTXA_dur            # end of first CTX A period
+t2 = t1+tCTX_off                # start of CTX B period
+t3 = t2+tCTXB_dur+tCTX_off      # end of second CTX B period
+tsim = t3 + tCS_dur + tCS_off
+
+
 delta_tr = 0.1                						# Temporal resolution (ms)
 nbins    = int(tsim/delta_tr)        				# Length of simulation (bins)
 tstim	 = np.arange(0.0, tsim, delta_tr)			# Times discretized
+
+t_condition_start = tinit
+t_condition_end = t_condition_start + tCTXA_dur
+t_extinction_start = t_condition_end + tCTX_off
+t_extinction_end = t_extinction_start + tCTXB_dur
+
 
 input_vars={
             'cs_rate'  : 0.0*Hz,
