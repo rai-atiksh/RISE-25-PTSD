@@ -46,14 +46,19 @@ class MeanValueModel:
         }
 
     # Runs the simulation
-    def run_sim(self, T, dt, time, alpha, activity, w, ptsd_factor, I_fear, I_context_safe, I_context_threat, I_des_amp, des_active):
+    def run_sim(self, T, dt, time, alpha, activity, w, ptsd_factor, I_fear, I_context_safe, I_context_threat, I_des_amp, des_active_acq, des_active_ex, des_active_re):
         # Arrays to keep track of context, fear input, and des amplitutde over time
         context_trace = np.ones(len(time))
         I_fear_trace = np.zeros(len(time))
         I_des = np.zeros(len(time))
+        
         # Initialize the DES array based on when you want it active
-        if des_active:
-            I_des[int(len(time) / 3) : ] = I_des_amp    # change the splicing indexes to add des at different points
+        if des_active_acq:
+            I_des[: int(len(time) / 3)] = I_des_amp
+        if des_active_ex:
+            I_des[int(len(time) / 3) : int(2 * len(time) / 3)] = I_des_amp
+        if des_active_re:
+            I_des[int(2 * len(time) / 3) : ] = I_des_amp
 
         # Initializing pulse parameters for fear input
         pulse_duration = int(T / 40)
@@ -143,15 +148,84 @@ class MeanValueModel:
         plt.tight_layout()
         plt.show()
 
+    # Creating bar graphs of the difference in values of fear peak in acquisition vs renewal
+    # for a normal person, person with ptsd, and a person with ptsd and applied DES at different times
+    def plot_bars(self, T, dt, time, alpha, ptsd_factor, I_fear, I_context_safe, I_context_threat, I_des_amp):
+        # Running 5 different models to get 5 different values of activities
+        length = len(time)
+        normal = MeanValueModel()
+        ptsd_no_des = MeanValueModel()
+        ptsd_des_acquisition = MeanValueModel()
+        ptsd_des_extinction = MeanValueModel()
+        ptsd_des_ex_re = MeanValueModel()
+
+        # Initializing their activites
+        activity_normal = normal.init_activity(alpha, time)
+        activity_ptsd_no_des = ptsd_no_des.init_activity(alpha, time)
+        activity_ptsd_des_acquisition = ptsd_des_acquisition.init_activity(alpha, time)
+        activity_ptsd_des_extinction = ptsd_des_extinction.init_activity(alpha, time)
+        activity_ptsd_des_ex_re = ptsd_des_ex_re.init_activity(alpha, time)
+        # Initializing their weights
+        w_normal = normal.init_weight()
+        w_ptsd_no_des = ptsd_no_des.init_weight()
+        w_ptsd_des_acquisition = ptsd_des_acquisition.init_weight()
+        w_ptsd_des_extinction = ptsd_des_extinction.init_weight()
+        w_ptsd_des_ex_re = ptsd_des_ex_re.init_weight()
+
+        # Running their simulation
+        activity_normal, _, _, _ = normal.run_sim(T, dt, time, alpha, activity_normal, w_normal, 1.0, I_fear,
+                                                                        I_context_safe, I_context_threat, I_des_amp, 
+                                                                        False, False, False)
+        activity_ptsd_no_des, _, _, _ = ptsd_no_des.run_sim(T, dt, time, alpha, activity_ptsd_no_des, w_ptsd_no_des, ptsd_factor, I_fear,
+                                                                        I_context_safe, I_context_threat, I_des_amp, 
+                                                                        False, False, False)
+        activity_ptsd_des_acquisition, _, _, _ = ptsd_des_acquisition.run_sim(T, dt, time, alpha, activity_ptsd_des_acquisition, w_ptsd_des_acquisition, ptsd_factor, I_fear,
+                                                                        I_context_safe, I_context_threat, I_des_amp, 
+                                                                        True, False, False)
+        activity_ptsd_des_extinction, _, _, _ = ptsd_des_extinction.run_sim(T, dt, time, alpha, activity_ptsd_des_extinction, w_ptsd_des_extinction, ptsd_factor, I_fear,
+                                                                        I_context_safe, I_context_threat, I_des_amp, 
+                                                                        False, True, False)
+        activity_ptsd_des_ex_re, _, _, _ = ptsd_des_ex_re.run_sim(T, dt, time, alpha, activity_ptsd_des_ex_re, w_ptsd_des_ex_re, ptsd_factor, I_fear,
+                                                                        I_context_safe, I_context_threat, I_des_amp, 
+                                                                        False, True, True)
+        # Extracting CeA activity
+        cea_normal = activity_normal['CeA']
+        cea_ptsd_no_des = activity_ptsd_no_des['CeA']
+        cea_ptsd_des_acquisition = activity_ptsd_des_acquisition['CeA']
+        cea_ptsd_des_extinction = activity_ptsd_des_extinction['CeA']
+        cea_ptsd_des_ex_re = activity_ptsd_des_ex_re['CeA']
+
+        # Finding the % change in their peaks during acquisition vs renewal
+        diff_normal = (max(cea_normal[int(2 * length / 3) : ]) - max(cea_normal[ : int(length / 3)])) / max(cea_normal[ : int(length / 3)]) * 100
+        diff_ptsd_no_des = (max(cea_ptsd_no_des[int(2 * length / 3) : ]) - max(cea_ptsd_no_des[ : int(length / 3)])) /  max(cea_ptsd_no_des[ : int(length / 3)]) * 100
+        diff_ptsd_des_acquisition = (max(cea_ptsd_des_acquisition[int(2 * length / 3) : ]) - max(cea_ptsd_des_acquisition[ : int(length / 3)])) / max(cea_ptsd_des_acquisition[ : int(length / 3)]) * 100
+        diff_ptsd_des_extinction = (max(cea_ptsd_des_extinction[int(2 * length / 3) : ]) - max(cea_ptsd_des_extinction[ : int(length / 3)])) / max(cea_ptsd_des_extinction[ : int(length / 3)]) * 100
+        diff_ptsd_des_ex_re = (max(cea_ptsd_des_ex_re[int(2 * length / 3) : ]) - max(cea_ptsd_des_ex_re[ : int(length / 3)])) / max(cea_ptsd_des_ex_re[ : int(length / 3)]) * 100
+
+        # Plotting it
+        catgories = ["Normal", "PTSD(No DES)", "PTSD(DES acquisition)", "PTSD(DES extinction)", "PTSD(DES extinction & renewal)"]
+        values = [diff_normal, diff_ptsd_no_des, diff_ptsd_des_acquisition ,diff_ptsd_des_extinction, diff_ptsd_des_ex_re]
+        plt.figure(figsize=(13, 6))
+        plt.bar(catgories, values)
+        plt.ylabel("% Change in fear peaks(Acquisition - Renewal)", fontsize=14)
+        plt.tick_params(axis="both", labelsize=10)
+        plt.title("Fear Response Drop off Across Conditions (ptsd_factor = " + str(ptsd_factor) + ")", fontsize=16)
+
+        plt.show()
+
+
+
 def main():
     T = 300
     dt = 0.1
-    ptsd_factor = 0.0         # 0 = more severe, 1 = normal 
+    ptsd_factor = 0.5         # 0 = more severe, 1 = normal 
     I_fear = 1.0              # Fear input
     I_context_safe = 0.3      # Stimulating current used to represent perception of 'safe' envirornment
     I_context_threat = 0.5    # Stimulating current used to represent perception of 'threatening' envirornment
-    I_des_amp = 0.2           # The amplitutde of the stimulating des current
-    des_active = True         # whether des is active or not in this simulation
+    I_des_amp = 0.05           # The amplitutde of the stimulating des current
+    des_active_acq = False    # whether des is active during acquisition
+    des_active_ex = False     # whether des is active during extinction
+    des_active_re = False     # whether des is active during renewal
 
     model = MeanValueModel()
     time, alpha = model.initialize(T, dt)
@@ -160,9 +234,10 @@ def main():
 
     activity, context_trace, I_fear_trace, w_ITC_to_CeA = model.run_sim(T, dt, time, alpha, activity, w, ptsd_factor, I_fear,
                                                                         I_context_safe, I_context_threat, I_des_amp, 
-                                                                        des_active)
+                                                                        des_active_acq, des_active_ex, des_active_re)
 
     model.plot(time, activity, context_trace, I_fear_trace, w_ITC_to_CeA, ptsd_factor)
+    model.plot_bars(T, dt, time, alpha, ptsd_factor, I_fear, I_context_safe, I_context_threat, I_des_amp)
 
 if __name__ == "__main__":
     main()
