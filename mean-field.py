@@ -203,12 +203,12 @@ class MeanValueModel:
         diff_ptsd_des_ex_re = (max(cea_ptsd_des_ex_re[int(2 * length / 3) : ]) - max(cea_ptsd_des_ex_re[ : int(length / 3)])) / max(cea_ptsd_des_ex_re[ : int(length / 3)]) * 100
 
         # Plotting it
-        catgories = ["Normal", "PTSD(No DES)", "PTSD(DES acquisition)", "PTSD(DES extinction)", "PTSD(DES extinction & renewal)"]
+        catgories = ["Normal", "PTSD\n(No DES)", "PTSD\n(DES acq)", "PTSD\n(DES ext)", "PTSD\n(DES ext & re)"]
         values = [diff_normal, diff_ptsd_no_des, diff_ptsd_des_acquisition ,diff_ptsd_des_extinction, diff_ptsd_des_ex_re]
-        plt.figure(figsize=(13, 6))
+        plt.figure(figsize=(8, 8))
         plt.bar(catgories, values)
         plt.ylabel("% Change in fear peaks(Acquisition - Renewal)", fontsize=14)
-        plt.tick_params(axis="both", labelsize=10)
+        plt.tick_params(axis="both", labelsize=12)
         plt.title("Fear Response Drop off Across Conditions (ptsd_factor = " + str(ptsd_factor) + ")", fontsize=16)
 
         plt.show()
