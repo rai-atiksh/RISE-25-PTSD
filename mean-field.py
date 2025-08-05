@@ -146,6 +146,7 @@ class MeanValueModel:
         ax3.grid(True)
 
         plt.tight_layout()
+        plt.savefig('mean-field-out.png')
         plt.show()
 
     # Creating bar graphs of the difference in values of fear peak in acquisition vs renewal

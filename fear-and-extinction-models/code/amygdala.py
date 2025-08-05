@@ -65,6 +65,7 @@ def amygdala_net(input=False, input_vars=input_vars, pcon=pcon, wsyn=wsyn, sdel=
         refractory=tref,        # Absolute Refractory Period 
         method='rk4'            # Calculation Method
     )
+    neurons.Vt = Vt
 
     # Initialize membrane potential around resting plus noise
     neurons.v    = 'E0 + randn()*3.0*mV'
@@ -145,26 +146,25 @@ def amygdala_net(input=False, input_vars=input_vars, pcon=pcon, wsyn=wsyn, sdel=
         t_condition_end = t_condition_start + tCTXA_dur
         t_extinction_start = t_condition_end + tCTX_off
         t_extinction_end = t_extinction_start + tCTXB_dur
-        f_dbs = 130*Hz         # DBS frequency
-        pulse_times_condition = np.arange(t_condition_start, t_condition_end, (1/f_dbs)/ms) * ms
-        pulse_times_extinction = np.arange(t_extinction_start, t_extinction_end, 1/f_dbs/ms) * ms
-        if (DBS==1):
-            # DBS parameters
-            DBS_source = SpikeGeneratorGroup(1, np.zeros(len(pulse_times_condition)), pulse_times_condition)
-            S_dbs_E = Synapses(DBS_source, pop[0], on_pre='v_post += 5*mV')
-            S_dbs_E.connect(p="0.5")
-            S_dbs_I = Synapses(DBS_source, pop[1], on_pre='v_post += 5*mV')
-            S_dbs_I.connect(p="0.5")
-        elif (DBS==2):
-            DBS_source = SpikeGeneratorGroup(1, np.zeros(len(pulse_times_extinction)), pulse_times_extinction)
-            S_dbs_E = Synapses(DBS_source, pop[0], on_pre='v_post += 5*mV')
-            S_dbs_E.connect(p="0.5")
-            S_dbs_I = Synapses(DBS_source, pop[1], on_pre='v_post += 5*mV')
-            S_dbs_I.connect(p="0.5")
-
+        if (DBS == 1):
+            # During conditioning
             @network_operation(dt=1*ms)
-            def control_dbs():
-                CTX_B.DBS_on = (t_extinction_start <= defaultclock.t / ms) * (defaultclock.t / ms <= t_extinction_end)
+            def apply_dbs_condition():
+                if t_condition_start <= defaultclock.t/ms <= t_condition_end:
+                    # Boost inhibitory population during DBS window
+                    pop[0].Vt = Vt + 1*mV  # Raise threshold for projection neurons (silence output)
+                else:
+                    # Restore thresholds outside DBS
+                    pop[0].Vt = Vt
+        elif (DBS == 2):
+            # During extinction
+            @network_operation(dt=1*ms)
+            def apply_dbs_extinction():
+                if t_extinction_start <= defaultclock.t/ms <= t_extinction_end:
+                    # Boost inhibitory tone
+                    pop[0].Vt = Vt + 1*mV
+                else:
+                    pop[0].Vt = Vt
 
         #############################################################################
         # Connect context A & B groups with plastic synapses

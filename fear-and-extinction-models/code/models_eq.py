@@ -35,6 +35,8 @@ eq_LIF = '''
         dh/dt = -h/tauh : 1
         dc/dt = -c/tauc : 1
 
+        Vt : volt
+
         tcs : second
         tctx: second
         wcs : siemens

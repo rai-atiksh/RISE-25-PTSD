@@ -36,11 +36,11 @@ import matplotlib.gridspec as gridspec
 
 protocol = int(sys.argv[1])
 
-seed(100) # seed of the random number generator
+seed(99) # seed of the random number generator
 
 
 # Number of parallel repeat simulations
-n_simulations = 2
+n_simulations = 30
 
 
 def make_old_figure(fear_stages_simulations, n_simulations, t1, t2, filename="normal"):
@@ -118,7 +118,7 @@ def make_old_figure(fear_stages_simulations, n_simulations, t1, t2, filename="no
         ax.set_xlim(50,tsim)
         ax.set_ylabel('# Neuron')
         ax.set_xlabel('Time (ms)')
-        ax.text(-200, 3800,"A", weight="bold", fontsize=30)
+        # ax.text(-200, 3800,"A", weight="bold", fontsize=30)
 
         ax.get_xaxis().set_visible(False)
         
@@ -144,7 +144,7 @@ def make_old_figure(fear_stages_simulations, n_simulations, t1, t2, filename="no
 
         ax.set_ylabel("Frequency (Hz)")
         ax.set_xlabel("Time (ms)")
-        ax.text(-200, 3.8,"B", weight="bold", fontsize=30)
+        # ax.text(-200, 3.8,"B", weight="bold", fontsize=30)
         ax.get_xaxis().set_visible(False)
 
         # 4c) Firing‐rate time‐series for inhibitory pop (rows 10–12)
@@ -251,7 +251,7 @@ def make_figure(fear_stages_simulations, n_simulations, t1, t2, filename="normal
         ax.set_xlim(50,tsim)
         ax.set_ylabel('# Neuron')
         ax.set_xlabel('Time (ms)')
-        ax.text(-250, 3800, "A", weight="bold", fontsize=30)
+        # ax.text(-250, 3800, "A", weight="bold", fontsize=30)
 
         ax.get_xaxis().set_visible(False)
         
@@ -267,7 +267,7 @@ def make_figure(fear_stages_simulations, n_simulations, t1, t2, filename="normal
 
         ax.set_ylabel("Frequency (Hz)")
         ax.set_xlabel("Time (ms)")
-        ax.text(-250, 2.15, "B", weight="bold", fontsize=30)
+        # ax.text(-250, 2.15, "B", weight="bold", fontsize=30)
 
         #ax.plot(fr_BB[1][:-1], fr_BB[0]*1000/(bin_f*NI),lw=2)
         #ax.plot(fr_AA[1][:-1], fr_AA[0]*1000/(bin_f*NI),lw=2)
